@@ -32,8 +32,10 @@ finance_app/
 ├── .gitignore                # à masquer
 
 ├── models/                   # structures de données
+│   ├── client.py
 │   ├── compte.py
 │   ├── credit.py
+│   ├── test_objet.py         # !!! à masquer dès que finalisation projet !!!
 │   └── epargne.py
 
 ├── services/                 # calculs métier
