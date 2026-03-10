@@ -37,17 +37,26 @@ class Epargne:
         if type_epargne not in self.TYPE_EPARGNE:
             raise ValueError("Type d'épargne invalide")
         
+        if solde < 0:
+            raise ValueError("Le solde ne peut pas être négatif")
+        
+        if taux < 0:
+            raise ValueError("Le taux doit être positif")
+        
+        if versements_permanents < 0:
+            raise ValueError("Le versement permanent doit être positif")
+        
         produit = self.TYPE_EPARGNE[type_epargne]
 
         self.type_epargne = type_epargne
         self.nom = produit["nom"]
         self.solde = float(solde)
-        self.versements_permanents = float(versements_permanents) if versements_permanents else None
+        self.versements_permanents = float(versements_permanents)
         self.plafond_min = produit["plafond_min"]
         self.plafond_max = produit["plafond_max"]
         self.taux = float(taux)
 
-        if self.plafond_min and self.solde < self.plafond_min:
+        if self.plafond_min is not None and self.solde < self.plafond_min:
             raise ValueError("Solde inférieur au minimum requis")
         
     def __repr__(self):
