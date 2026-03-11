@@ -35,6 +35,8 @@ finance_app/
 │   ├── client.py
 │   ├── compte.py
 │   ├── credit.py
+│   ├── depense.py
+│   ├── revenu.py
 │   ├── test_objet.py         # !!! à masquer dès que finalisation projet !!!
 │   └── epargne.py
 

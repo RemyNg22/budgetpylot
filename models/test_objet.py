@@ -7,90 +7,298 @@ from revenu import Revenu
 from datetime import datetime
 
 
-# Création des clients
-jean = Client("Jean")
-lucie = Client("Lucie")
+print("\n=== LOGICIEL DE BUDGET ===\n")
+
+date_du_jour = datetime.today()
+clients = []
 
 
-# Ajout des comptes
+def choisir_client():
+    """Permet de sélectionner un client existant"""
+    if not clients:
+        print("Aucun client enregistré.")
+        return None
 
-compte_courant1 = Compte("LCL", "compte courant Jean", 754.10)
-compte_courant_pro = Compte("CIC", "compte pro", 2039)
-compte_courant2 = Compte("LCL", "compte lucie", 23001)
+    for i, c in enumerate(clients):
+        print(f"{i+1} - {c.nom}")
 
-jean.ajouter_compte(compte_courant1)
-jean.ajouter_compte(compte_courant_pro)
-lucie.ajouter_compte(compte_courant2)
-
-
-# Ajout des revenus
-revenu1 = Revenu("salaire", 2500, "mensuelle", jour=30)
-prime_interessement = Revenu("prime fixe", 5000, "annuelle", jour=6, mois=6)
-revenu2 = Revenu("salaire", 3599, "mensuelle", jour=10)
-heritage = Revenu("héritage", 240000, "unique", jour=5, mois=12)
-
-jean.ajouter_revenu(revenu1)
-jean.ajouter_revenu(prime_interessement)
-lucie.ajouter_revenu(revenu2)
-lucie.ajouter_revenu(heritage)
+    try:
+        choix = int(input("Choisir un client : "))
+        return clients[choix-1]
+    except:
+        print("Choix invalide")
+        return None
 
 
-# Ajout des dépenses
-depense1 = Depense("loyer", 1200, "fixe", jour=1)
-depense2 = Depense("internet", 40, "fixe", jour=5)
-depense3 = Depense("courses", 450, "variable", jour=15)
-depense4 = Depense("vacances", 2000, "variable", jour=20)
+# Création du premier client
+while True:
 
-jean.ajouter_depense(depense1)
-jean.ajouter_depense(depense2)
-jean.ajouter_depense(depense3)
+    personne = input("Ajouter une première personne (nom) : ")
 
-lucie.ajouter_depense(depense1)
-lucie.ajouter_depense(depense4)
+    if not personne:
+        print("Vous n'avez rien entré")
+        continue
 
+    if not personne.isalpha():
+        print("Erreur : seules les lettres sont autorisées")
+        continue
 
-# Ajout d’un crédit
-credit1 = Credit(
-    type_de_credit=4,
-    capital_emprunte=10000,
-    crd=10000,
-    taux=5.5,
-    duree_initiale=24,
-    mensualite=450,
-    fin_credit="01-12-2026"
-)
-jean.ajouter_credit(credit1, part=1.0)
+    nouveau_client = Client(personne)
+    clients.append(nouveau_client)
+
+    print("Personne ajoutée.")
+    break
 
 
-# Simulation des flux
-date_du_jour = datetime.strptime("10/03/2026", "%d/%m/%Y")
-date_cible = datetime.strptime("30/04/2026", "%d/%m/%Y")
 
-# Appliquer flux pour Jean
-for compte in jean.comptes:
-    jean.appliquer_flux_sur_compte(compte, date_du_jour, date_cible)
+# Menu principal
+while True:
 
-# Appliquer flux pour Lucie
-for compte in lucie.comptes:
-    lucie.appliquer_flux_sur_compte(compte, date_du_jour, date_cible)
+    print("\n===== MENU =====")
+
+    print("1 - Ajouter une personne")
+    print("2 - Ajouter un compte")
+    print("3 - Ajouter un revenu")
+    print("4 - Ajouter une dépense")
+    print("5 - Ajouter un crédit")
+    print("6 - Ajouter une épargne")
+    print("7 - Afficher les infos à la date du jour")
+    print("8 - Simuler une date future")
+    print("9 - Quitter")
+
+    try:
+        choix = int(input("Votre choix : "))
+    except:
+        print("Votre choix n'est pas valide.")
+        continue
 
 
-# Affichage des soldes
-print("=== Soldes au", date_cible.strftime("%d/%m/%Y"), "===")
-for compte in jean.comptes:
-    print(f"{jean.nom} - {compte.nom_compte}: {compte.solde_a_date(date_cible):,.2f} €")
 
-for compte in lucie.comptes:
-    print(f"{lucie.nom} - {compte.nom_compte}: {compte.solde_a_date(date_cible):,.2f} €")
+# Ajouter une personne
+    if choix == 1:
+
+        personne = input("Nom de la personne : ")
+
+        if not personne:
+            print("Vous n'avez rien entré")
+            continue
+
+        if not personne.isalpha():
+            print("Erreur : seules les lettres sont autorisées")
+            continue
+
+        clients.append(Client(personne))
+        print("Personne ajoutée")
 
 
-# Affichage résumé revenus / dépenses
-def afficher_resume(client: Client, mois: int):
-    print(f"\n=== Résumé {client.nom} pour le mois {mois} ===")
-    print("Revenus ce mois:", client.revenus_du_mois(mois))
-    print("Total dépenses fixes:", client.total_depenses_du_mois(mois, "fixe"))
-    print("Total dépenses variables:", client.total_depenses_du_mois(mois, "variable"))
 
-# Mois d'avril
-afficher_resume(jean, mois=4)
-afficher_resume(lucie, mois=4)
+# Ajouter un compte
+    elif choix == 2:
+
+        client = choisir_client()
+        if not client:
+            continue
+
+        banque = input("Banque : ")
+        nom_compte = input("Nom du compte : ")
+
+        try:
+            solde = float(input("Solde actuel : "))
+        except:
+            print("Montant invalide")
+            continue
+
+        compte = Compte(banque, nom_compte, solde)
+        client.ajouter_compte(compte)
+
+        print("Compte ajouté.")
+
+
+# Ajouter un revenu
+    elif choix == 3:
+
+        client = choisir_client()
+        if not client:
+            continue
+
+        type_revenu = input("Type de revenu (ex : salaire) : ")
+
+        try:
+            montant = float(input("Montant : "))
+        except:
+            print("Montant invalide")
+            continue
+
+        periodicite = input("Periodicité (mensuelle/annuelle/unique) : ")
+
+        try:
+            jour = int(input("Jour du versement : "))
+        except:
+            print("Jour invalide")
+            continue
+
+        mois = None
+
+        if periodicite in ["annuelle", "unique"]:
+            try:
+                mois = int(input("Mois du versement : "))
+            except:
+                print("Mois invalide")
+                continue
+
+        revenu = Revenu(type_revenu, montant, periodicite, jour, mois)
+
+        client.ajouter_revenu(revenu)
+
+        print("Revenu ajouté.")
+
+
+# Ajouter une dépense
+    elif choix == 4:
+
+        client = choisir_client()
+        if not client:
+            continue
+
+        nom = input("Nom de la dépense : ")
+
+        try:
+            montant = float(input("Montant : "))
+        except:
+            print("Montant invalide")
+            continue
+
+        type_depense = input("Type (fixe / variable / unique) : ")
+
+        try:
+            jour = int(input("Jour : "))
+        except:
+            print("Jour invalide")
+            continue
+
+        mois = None
+
+        if type_depense == "unique":
+            try:
+                mois = int(input("Mois : "))
+            except:
+                print("Mois invalide")
+                continue
+
+        depense = Depense(nom, montant, type_depense, jour, mois)
+
+        client.ajouter_depense(depense)
+
+        print("Dépense ajoutée.")
+
+
+# Ajouter un crédit
+    elif choix == 5:
+
+        client = choisir_client()
+        if not client:
+            continue
+
+        try:
+            type_credit = int(input("Type de crédit (1 à 5) : "))
+            capital = float(input("Capital emprunté : "))
+            crd = float(input("CRD : "))
+            taux = float(input("Taux : "))
+            duree = int(input("Durée initiale (mois) : "))
+            mensualite = float(input("Mensualité : "))
+            fin = input("Date fin crédit (JJ/MM/AAAA) : ")
+        except:
+            print("Erreur de saisie")
+            continue
+
+        credit = Credit(
+            type_credit,
+            capital,
+            crd,
+            taux,
+            duree,
+            mensualite,
+            datetime.strptime(fin, "%d/%m/%Y")
+        )
+
+        client.ajouter_credit(credit)
+
+        print("Crédit ajouté.")
+
+
+# Ajouter épargne
+    elif choix == 6:
+
+        client = choisir_client()
+        if not client:
+            continue
+
+        try:
+            type_epargne = int(input("Type d'épargne : "))
+            solde = float(input("Solde : "))
+        except:
+            print("Erreur de saisie")
+            continue
+
+        epargne = Epargne(type_epargne, solde)
+
+        client.ajouter_epargne(epargne)
+
+        print("Epargne ajoutée.")
+
+
+# Situation actuelle
+    elif choix == 7:
+
+        for client in clients:
+
+            print(f"\nClient : {client.nom}")
+
+            for compte in client.comptes:
+
+                solde = compte.solde_a_date(date_du_jour)
+
+                print(
+                    f"{compte.nom_compte} : "
+                    f"{solde:.2f} € au "
+                    f"{date_du_jour.strftime('%d/%m/%Y')}"
+                )
+
+
+# Simulation future
+    elif choix == 8:
+
+        try:
+            date_str = input("Date cible (JJ/MM/AAAA) : ")
+            date_cible = datetime.strptime(date_str, "%d/%m/%Y")
+        except:
+            print("Date invalide")
+            continue
+
+        for client in clients:
+
+            for compte in client.comptes:
+
+                client.appliquer_flux_sur_compte(
+                    compte,
+                    date_du_jour,
+                    date_cible
+                )
+
+                solde = compte.solde_a_date(date_cible)
+
+                print(
+                    f"{client.nom} - {compte.nom_compte} : "
+                    f"{solde:.2f} € au "
+                    f"{date_cible.strftime('%d/%m/%Y')}"
+                )
+
+# Quitter
+    elif choix == 9:
+
+        print("Fin du programme.")
+        break
+
+
+    else:
+        print("Choix invalide.")
