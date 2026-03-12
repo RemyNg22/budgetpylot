@@ -1,54 +1,40 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Saisie budget</title>
-</head>
+{% extends "base.html" %}
 
-<body>
+{% block content %}
 
-<h1>Simulation budget</h1>
+<div class="section">
 
+
+<!-- BLOC DU REVENU -->
 <h2>Ajouter un revenu</h2>
 
 <form method="POST" action="/revenu">
 
-<label>Type de revenu</label>
-
+Type :
 <select name="type_revenu">
 {% for r in type_revenu %}
 <option value="{{ r }}">{{ r }}</option>
 {% endfor %}
 </select>
 
-<br><br>
-
-<label>Montant (€)</label>
+Montant :
 <input type="number" step="0.01" name="montant" required>
 
-<br><br>
-
-<label>Périodicité</label>
-
+Périodicité :
 <select name="periodicite">
 <option value="mensuelle">Mensuelle</option>
 <option value="annuelle">Annuelle</option>
 <option value="unique">Unique</option>
 </select>
 
-<br><br>
-
-<label>Jour</label>
-
+Jour :
 <select name="jour">
 {% for j in jours %}
 <option value="{{ j }}">{{ j }}</option>
 {% endfor %}
 </select>
 
-<br><br>
-
-<label>Mois (si annuel ou unique)</label>
-
+Mois :
 <select name="mois">
 <option value="">--</option>
 {% for m in mois %}
@@ -56,51 +42,74 @@
 {% endfor %}
 </select>
 
-<br><br>
-
-<button type="submit">Ajouter revenu</button>
+<button type="submit">Ajouter</button>
 
 </form>
 
+<h3>Revenus enregistrés</h3>
+
+<table>
+
+<tr>
+<th>Type</th>
+<th>Montant</th>
+<th>Périodicité</th>
+<th>Jour</th>
+<th>Mois</th>
+<th>Action</th>
+</tr>
+
+{% for r in revenus %}
+
+<tr>
+<td>{{ r.type_revenu }}</td>
+<td>{{ r.montant }}</td>
+<td>{{ r.periodicite }}</td>
+<td>{{ r.jour }}</td>
+<td>{{ r.mois }}</td>
+<td>
+<a href="/supprimer_revenu/{{ r.id }}">Supprimer</a>
+</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
 
 <hr>
 
+
+<div class="section">
+
+
+<!-- BLOC DEPENSE -->
 <h2>Ajouter une dépense</h2>
 
 <form method="POST" action="/depense">
 
-<label>Nom de la dépense</label>
+Nom :
 <input type="text" name="nom" required>
 
-<br><br>
-
-<label>Montant (€)</label>
+Montant :
 <input type="number" step="0.01" name="montant" required>
 
-<br><br>
-
-<label>Type de dépense</label>
-
+Type :
 <select name="type_depense">
 <option value="fixe">Fixe</option>
 <option value="variable">Variable</option>
 <option value="unique">Unique</option>
 </select>
 
-<br><br>
-
-<label>Jour</label>
-
+Jour :
 <select name="jour">
 {% for j in jours %}
 <option value="{{ j }}">{{ j }}</option>
 {% endfor %}
 </select>
 
-<br><br>
-
-<label>Mois (si dépense unique)</label>
-
+Mois :
 <select name="mois">
 <option value="">--</option>
 {% for m in mois %}
@@ -108,48 +117,174 @@
 {% endfor %}
 </select>
 
-<br><br>
-
-<button type="submit">Ajouter dépense</button>
+<button type="submit">Ajouter</button>
 
 </form>
 
+<h3>Dépenses enregistrées</h3>
+
+<table>
+
+<tr>
+<th>Nom</th>
+<th>Montant</th>
+<th>Type</th>
+<th>Jour</th>
+<th>Mois</th>
+<th>Action</th>
+</tr>
+
+{% for d in depenses %}
+
+<tr>
+<td>{{ d.nom }}</td>
+<td>{{ d.montant }}</td>
+<td>{{ d.type_depense }}</td>
+<td>{{ d.jour }}</td>
+<td>{{ d.mois }}</td>
+<td>
+<a href="/supprimer_depense/{{ d.id }}">Supprimer</a>
+</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
 
 <hr>
 
+<div class="section">
+
+
+
+<!-- BLOC EPARGNE -->
 <h2>Ajouter une épargne</h2>
 
 <form method="POST" action="/epargne">
 
-<label>Type d'épargne</label>
-
+Type :
 <select name="type_epargne">
 {% for k,v in type_epargne.items() %}
 <option value="{{ k }}">{{ v }}</option>
 {% endfor %}
 </select>
 
-<br><br>
+Solde :
+<input type="number" step="0.01" name="solde">
 
-<label>Montant initial (€)</label>
-<input type="number" step="0.01" name="montant_initial" required>
-
-<br><br>
-
-<label>Versement programmé mensuel (€)</label>
+Versement mensuel :
 <input type="number" step="0.01" name="versement_mensuel">
 
-<br><br>
-
-<label>Taux (%)</label>
+Taux :
 <input type="number" step="0.01" name="taux">
 
-<br><br>
-
-<button type="submit">Ajouter épargne</button>
+<button type="submit">Ajouter</button>
 
 </form>
 
+<h3>Epargnes enregistrées</h3>
 
-</body>
-</html>
+<table>
+
+<tr>
+<th>Type</th>
+<th>Solde</th>
+<th>Versement</th>
+<th>Taux</th>
+<th>Action</th>
+</tr>
+
+{% for e in epargnes %}
+
+<tr>
+<td>{{ e.type_epargne }}</td>
+<td>{{ e.solde }}</td>
+<td>{{ e.versement }}</td>
+<td>{{ e.taux }}</td>
+<td>
+<a href="/supprimer_epargne/{{ e.id }}">Supprimer</a>
+</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+<hr>
+
+<div class="section">
+
+
+<!-- BLOC CREDIT-->
+<h2>Ajouter un crédit</h2>
+
+<form method="POST" action="/credit">
+
+Type :
+<select name="type_credit">
+{% for k,v in type_credit.items() %}
+<option value="{{ k }}">{{ v }}</option>
+{% endfor %}
+</select>
+
+Capital emprunté :
+<input type="number" step="0.01" name="capital_emprunte">
+
+CRD :
+<input type="number" step="0.01" name="crd">
+
+Taux :
+<input type="number" step="0.01" name="taux">
+
+Durée initiale :
+<input type="number" name="duree_initiale">
+
+Mensualité :
+<input type="number" step="0.01" name="mensualite">
+
+Fin crédit :
+<input type="date" name="fin_credit">
+
+<button type="submit">Ajouter</button>
+
+</form>
+
+<h3>Crédits enregistrés</h3>
+
+<table>
+
+<tr>
+<th>Type</th>
+<th>Capital</th>
+<th>CRD</th>
+<th>Taux</th>
+<th>Mensualité</th>
+<th>Fin</th>
+<th>Action</th>
+</tr>
+
+{% for c in credits %}
+
+<tr>
+<td>{{ c.type_credit }}</td>
+<td>{{ c.capital_emprunte }}</td>
+<td>{{ c.crd }}</td>
+<td>{{ c.taux }}</td>
+<td>{{ c.mensualite }}</td>
+<td>{{ c.fin_credit }}</td>
+<td>
+<a href="/supprimer_credit/{{ c.id }}">Supprimer</a>
+</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+{% endblock %}

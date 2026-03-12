@@ -1,11 +1,13 @@
 from flask import Flask, render_template, request, redirect
-
 from models.revenu import Revenu
 from models.depense import Depense
+from models.credit import Credit
 from models.epargne import Epargne
+from data.dataframes import df_credits, df_depenses, df_epargnes, df_revenus
 
 TYPE_REVENU = Revenu.TYPE_REVENU
 TYPE_EPARGNE = {k: v["nom"] for k, v in Epargne.TYPE_EPARGNE.items()}
+TYPE_CREDIT = {k: v["nom"] for k, v in Credit.REGLES_CREDIT.items()}
 JOURS = list(range(1, 29))
 MOIS = list(range(1, 13))
 
@@ -24,12 +26,20 @@ def saisie():
         "saisie_budget.html",
         type_revenu=TYPE_REVENU,
         type_epargne=TYPE_EPARGNE,
+        type_credit = TYPE_CREDIT,
         jours=JOURS,
-        mois=MOIS)
+        mois=MOIS,
+        revenus=df_revenus.to_dict(orient="records"),
+        depenses=df_depenses.to_dict(orient="records"),
+        epargnes=df_epargnes.to_dict(orient="records"),
+        credits=df_credits.to_dict(orient="records")
+    )
 
 # AJOUT REVENU
 @app.route("/revenu", methods=["POST"])
 def ajouter_revenu():
+
+    global df_revenus
 
     type_revenu = request.form["type_revenu"]
     montant = float(request.form["montant"])
@@ -39,9 +49,25 @@ def ajouter_revenu():
     mois = request.form["mois"]
     mois = int(mois) if mois else None
 
-    revenu = Revenu(type_revenu, montant, periodicite, jour, mois)
+    new_id = len(df_revenus)
 
-    print(revenu)
+    df_revenus.loc[new_id] = [
+        new_id,
+        type_revenu,
+        montant,
+        periodicite,
+        jour,
+        mois
+    ]
+
+    return redirect("/saisie")
+
+@app.route("/supprimer_revenu/<int:id>")
+def supprimer_revenu(id):
+
+    global df_revenus
+
+    df_revenus = df_revenus[df_revenus.id != id]
 
     return redirect("/saisie")
 
@@ -49,6 +75,8 @@ def ajouter_revenu():
 # AJOUT DEPENSE
 @app.route("/depense", methods=["POST"])
 def ajouter_depense():
+
+    global df_depenses
 
     nom = request.form["nom"]
     montant = float(request.form["montant"])
@@ -58,9 +86,25 @@ def ajouter_depense():
     mois = request.form["mois"]
     mois = int(mois) if mois else None
 
-    depense = Depense(nom, montant, type_depense, jour, mois)
+    new_id = len(df_depenses)
 
-    print(depense)
+    df_depenses.loc[new_id] = [
+        new_id,
+        nom,
+        montant,
+        type_depense,
+        jour,
+        mois
+    ]
+
+    return redirect("/saisie")
+
+@app.route("/supprimer_depense/<int:id>")
+def supprimer_depense(id):
+
+    global df_depenses
+
+    df_depenses = df_depenses[df_depenses.id != id]
 
     return redirect("/saisie")
 
@@ -68,24 +112,73 @@ def ajouter_depense():
 @app.route("/epargne", methods=["POST"])
 def ajouter_epargne():
 
+    global df_epargnes
+
     type_epargne = int(request.form["type_epargne"])
+    solde = float(request.form["solde"])
 
-    montant_initial = float(request.form["montant_initial"])
-
-    versement_mensuel = request.form["versement_mensuel"]
-    versement_mensuel = float(versement_mensuel) if versement_mensuel else 0
+    versement = request.form["versement_mensuel"]
+    versement = float(versement) if versement else 0
 
     taux = request.form["taux"]
     taux = float(taux) if taux else 0
 
-    epargne = Epargne(
-        type_epargne,
-        montant_initial,
-        versement_mensuel,
-        taux
-    )
+    new_id = len(df_epargnes)
 
-    print(epargne)
+    df_epargnes.loc[new_id] = [
+        new_id,
+        type_epargne,
+        solde,
+        versement,
+        taux
+    ]
+
+    return redirect("/saisie")
+
+@app.route("/supprimer_epargne/<int:id>")
+def supprimer_epargne(id):
+
+    global df_epargnes
+
+    df_epargnes = df_epargnes[df_epargnes.id != id]
+
+    return redirect("/saisie")
+
+
+# AJOUT CREDIT
+@app.route("/credit", methods=["POST"])
+def ajouter_credit():
+    global df_credits
+
+    type_credit = request.form["type_credit"]
+    capital_emprunte = float(request.form["capital_emprunte"])
+    crd = float(request.form["crd"])
+    taux = float(request.form["taux"])
+    duree_initiale = int(request.form["duree_initiale"])
+    mensualite = float(request.form["mensualite"])
+    fin_credit = request.form["fin_credit"]    
+
+    new_id = len(df_credits)
+
+    df_credits.loc[new_id] = [
+        new_id,
+        type_credit,
+        capital_emprunte,
+        crd,
+        taux,
+        duree_initiale,
+        mensualite,
+        fin_credit
+    ]
+
+    return redirect("/saisie")
+
+@app.route("/supprimer_credit/<int:id>")
+def supprimer_credit(id):
+
+    global df_credits
+
+    df_credits = df_credits[df_credits.id != id]
 
     return redirect("/saisie")
 

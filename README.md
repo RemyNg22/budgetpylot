@@ -25,7 +25,7 @@ Ce projet est un simulateur bancaire personnel développé en **Python** avec un
 ```text
 finance_app/
 
-├── app.py                    # point d'entrée appli
+├── app.py                    # point d'entrée appli, routes flask
 ├── config.py                 # paramètres globaux
 ├── README.md                 # Description projet
 ├── requirements.txt          # à installer
@@ -48,21 +48,14 @@ finance_app/
 
 ├── data/                     # sauvegarde des données
 │   ├── csv_manager.py
+│   ├── dataframes.py
 │   └── sauvegardes/
-
-├── routes/                   # routes Flask
-│   ├── accueil.py
-│   ├── saisie.py
-│   ├── credits.py
-│   └── stats.py
-
+|
 ├── templates/                # HTML
 │   ├── base.html
-│   ├── index.html
 │   ├── saisie_budget.html
-│   ├── credits.html
 │   └── stats.html
-
+|
 ├── static/                   # visuel
 │   ├── css
 │   │   └── style.css
