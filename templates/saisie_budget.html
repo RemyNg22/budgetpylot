@@ -2,44 +2,170 @@
 
 {% block content %}
 
+<!-- CLIENTS -->
 <div class="section">
 
+<h2>Ajouter un client</h2>
 
-<!-- BLOC DU REVENU -->
+<form method="POST" action="/client">
+
+Nom :
+<input type="text" name="nom" required>
+
+<button type="submit">Ajouter</button>
+
+</form>
+
+<h3>Clients enregistrés</h3>
+
+<table>
+
+<tr>
+<th>ID</th>
+<th>Nom</th>
+<th>Action</th>
+</tr>
+
+{% for c in clients %}
+
+<tr>
+<td>{{ c.id }}</td>
+<td>{{ c.nom }}</td>
+<td>
+<a href="/supprimer_client/{{ c.id }}">Supprimer</a>
+</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+<hr>
+
+<!-- COMPTES -->
+<div class="section">
+
+<h2>Ajouter un compte</h2>
+
+<form method="POST" action="/compte">
+
+Nom du compte :
+<input type="text" name="new_compte" required>
+
+Titulaire(s) :
+
+<select name="clients" multiple>
+
+{% for c in clients %}
+
+<option value="{{ c.id }}">{{ c.nom }}</option>
+
+{% endfor %}
+
+</select>
+
+<button type="submit">Ajouter</button>
+
+</form>
+
+<h3>Comptes enregistrés</h3>
+
+<table>
+
+<tr>
+<th>ID</th>
+<th>Nom</th>
+<th>Action</th>
+</tr>
+
+{% for c in comptes %}
+
+<tr>
+<td>{{ c.id }}</td>
+<td>{{ c.nom_compte }}</td>
+<td>
+<a href="/supprimer_compte/{{ c.id }}">Supprimer</a>
+</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+<hr>
+
+<!-- REVENU -->
+<div class="section">
+
 <h2>Ajouter un revenu</h2>
 
 <form method="POST" action="/revenu">
 
-Type :
-<select name="type_revenu">
-{% for r in type_revenu %}
-<option value="{{ r }}">{{ r }}</option>
+Compte :
+
+<select name="id_compte">
+
+{% for c in comptes %}
+
+<option value="{{ c.id }}">{{ c.nom_compte }}</option>
+
 {% endfor %}
+
+</select>
+
+Type :
+
+<select name="type_revenu">
+
+{% for r in type_revenu %}
+
+<option value="{{ r }}">{{ r }}</option>
+
+{% endfor %}
+
 </select>
 
 Montant :
 <input type="number" step="0.01" name="montant" required>
 
 Périodicité :
+
 <select name="periodicite">
+
 <option value="mensuelle">Mensuelle</option>
 <option value="annuelle">Annuelle</option>
 <option value="unique">Unique</option>
+
 </select>
 
 Jour :
+
 <select name="jour">
+
 {% for j in jours %}
+
 <option value="{{ j }}">{{ j }}</option>
+
 {% endfor %}
+
 </select>
 
 Mois :
+
 <select name="mois">
+
 <option value="">--</option>
+
 {% for m in mois %}
+
 <option value="{{ m }}">{{ m }}</option>
+
 {% endfor %}
+
 </select>
 
 <button type="submit">Ajouter</button>
@@ -51,6 +177,7 @@ Mois :
 <table>
 
 <tr>
+<th>Compte</th>
 <th>Type</th>
 <th>Montant</th>
 <th>Périodicité</th>
@@ -62,14 +189,17 @@ Mois :
 {% for r in revenus %}
 
 <tr>
+<td>{{ r.id_compte }}</td>
 <td>{{ r.type_revenu }}</td>
 <td>{{ r.montant }}</td>
 <td>{{ r.periodicite }}</td>
 <td>{{ r.jour }}</td>
 <td>{{ r.mois }}</td>
+
 <td>
 <a href="/supprimer_revenu/{{ r.id }}">Supprimer</a>
 </td>
+
 </tr>
 
 {% endfor %}
@@ -80,14 +210,24 @@ Mois :
 
 <hr>
 
-
+<!-- DEPENSE -->
 <div class="section">
 
-
-<!-- BLOC DEPENSE -->
 <h2>Ajouter une dépense</h2>
 
 <form method="POST" action="/depense">
+
+Compte :
+
+<select name="id_compte">
+
+{% for c in comptes %}
+
+<option value="{{ c.id }}">{{ c.nom_compte }}</option>
+
+{% endfor %}
+
+</select>
 
 Nom :
 <input type="text" name="nom" required>
@@ -96,25 +236,39 @@ Montant :
 <input type="number" step="0.01" name="montant" required>
 
 Type :
+
 <select name="type_depense">
+
 <option value="fixe">Fixe</option>
 <option value="variable">Variable</option>
 <option value="unique">Unique</option>
+
 </select>
 
 Jour :
+
 <select name="jour">
+
 {% for j in jours %}
+
 <option value="{{ j }}">{{ j }}</option>
+
 {% endfor %}
+
 </select>
 
 Mois :
+
 <select name="mois">
+
 <option value="">--</option>
+
 {% for m in mois %}
+
 <option value="{{ m }}">{{ m }}</option>
+
 {% endfor %}
+
 </select>
 
 <button type="submit">Ajouter</button>
@@ -126,6 +280,7 @@ Mois :
 <table>
 
 <tr>
+<th>Compte</th>
 <th>Nom</th>
 <th>Montant</th>
 <th>Type</th>
@@ -137,14 +292,18 @@ Mois :
 {% for d in depenses %}
 
 <tr>
+
+<td>{{ d.id_compte }}</td>
 <td>{{ d.nom }}</td>
 <td>{{ d.montant }}</td>
 <td>{{ d.type_depense }}</td>
 <td>{{ d.jour }}</td>
 <td>{{ d.mois }}</td>
+
 <td>
 <a href="/supprimer_depense/{{ d.id }}">Supprimer</a>
 </td>
+
 </tr>
 
 {% endfor %}
@@ -155,20 +314,35 @@ Mois :
 
 <hr>
 
+<!-- EPARGNE -->
 <div class="section">
 
-
-
-<!-- BLOC EPARGNE -->
 <h2>Ajouter une épargne</h2>
 
 <form method="POST" action="/epargne">
 
-Type :
-<select name="type_epargne">
-{% for k,v in type_epargne.items() %}
-<option value="{{ k }}">{{ v }}</option>
+Client :
+
+<select name="id_client">
+
+{% for c in clients %}
+
+<option value="{{ c.id }}">{{ c.nom }}</option>
+
 {% endfor %}
+
+</select>
+
+Type :
+
+<select name="type_epargne">
+
+{% for k,v in type_epargne.items() %}
+
+<option value="{{ k }}">{{ v }}</option>
+
+{% endfor %}
+
 </select>
 
 Solde :
@@ -189,6 +363,7 @@ Taux :
 <table>
 
 <tr>
+<th>Client</th>
 <th>Type</th>
 <th>Solde</th>
 <th>Versement</th>
@@ -199,13 +374,17 @@ Taux :
 {% for e in epargnes %}
 
 <tr>
+
+<td>{{ e.id_client }}</td>
 <td>{{ e.type_epargne }}</td>
 <td>{{ e.solde }}</td>
 <td>{{ e.versement }}</td>
 <td>{{ e.taux }}</td>
+
 <td>
 <a href="/supprimer_epargne/{{ e.id }}">Supprimer</a>
 </td>
+
 </tr>
 
 {% endfor %}
@@ -216,19 +395,35 @@ Taux :
 
 <hr>
 
+<!-- CREDIT -->
 <div class="section">
 
-
-<!-- BLOC CREDIT-->
 <h2>Ajouter un crédit</h2>
 
 <form method="POST" action="/credit">
 
-Type :
-<select name="type_credit">
-{% for k,v in type_credit.items() %}
-<option value="{{ k }}">{{ v }}</option>
+Compte :
+
+<select name="id_compte">
+
+{% for c in comptes %}
+
+<option value="{{ c.id }}">{{ c.nom_compte }}</option>
+
 {% endfor %}
+
+</select>
+
+Type :
+
+<select name="type_credit">
+
+{% for k,v in type_credit.items() %}
+
+<option value="{{ k }}">{{ v }}</option>
+
+{% endfor %}
+
 </select>
 
 Capital emprunté :
@@ -258,6 +453,7 @@ Fin crédit :
 <table>
 
 <tr>
+<th>Compte</th>
 <th>Type</th>
 <th>Capital</th>
 <th>CRD</th>
@@ -270,15 +466,19 @@ Fin crédit :
 {% for c in credits %}
 
 <tr>
+
+<td>{{ c.id_compte }}</td>
 <td>{{ c.type_credit }}</td>
 <td>{{ c.capital_emprunte }}</td>
 <td>{{ c.crd }}</td>
 <td>{{ c.taux }}</td>
 <td>{{ c.mensualite }}</td>
 <td>{{ c.fin_credit }}</td>
+
 <td>
 <a href="/supprimer_credit/{{ c.id }}">Supprimer</a>
 </td>
+
 </tr>
 
 {% endfor %}

@@ -3,7 +3,7 @@ from models.revenu import Revenu
 from models.depense import Depense
 from models.credit import Credit
 from models.epargne import Epargne
-from data.dataframes import df_credits, df_depenses, df_epargnes, df_revenus
+from data.dataframes import df_credits, df_depenses, df_epargnes, df_revenus, df_clients, df_comptes, df_compte_clients
 
 TYPE_REVENU = Revenu.TYPE_REVENU
 TYPE_EPARGNE = {k: v["nom"] for k, v in Epargne.TYPE_EPARGNE.items()}
@@ -24,6 +24,8 @@ def index():
 def saisie():
     return render_template(
         "saisie_budget.html",
+        comptes=df_comptes.to_dict(orient="records"),
+        clients=df_clients.to_dict(orient="records"),
         type_revenu=TYPE_REVENU,
         type_epargne=TYPE_EPARGNE,
         type_credit = TYPE_CREDIT,
@@ -34,6 +36,78 @@ def saisie():
         epargnes=df_epargnes.to_dict(orient="records"),
         credits=df_credits.to_dict(orient="records")
     )
+
+
+# AJOUT CLIENT
+@app.route("/client", methods=["POST"])
+def ajouter_client():
+    global df_clients
+
+    nom = request.form["nom"]
+    new_id = df_clients["id"].max() + 1 if not df_clients.empty else 0
+    df_clients.loc[new_id] = [new_id, nom]
+    return redirect("/saisie")
+
+
+@app.route("/supprimer_client/<int:id>")
+def supprimer_client(id):
+
+    global df_clients, df_comptes, df_revenus, df_depenses, df_credits, df_epargnes, df_compte_clients
+
+    comptes_client = df_compte_clients[df_compte_clients.id_client == id]["id_compte"].reset_index(drop=True)
+    df_compte_clients = df_compte_clients[df_compte_clients.id_client != id].reset_index(drop=True)
+    df_revenus = df_revenus[~df_revenus.id_compte.isin(comptes_client)].reset_index(drop=True)
+    df_depenses = df_depenses[~df_depenses.id_compte.isin(comptes_client)].reset_index(drop=True)
+    df_credits = df_credits[~df_credits.id_compte.isin(comptes_client)].reset_index(drop=True)
+    df_epargnes = df_epargnes[df_epargnes.id_client != id].reset_index(drop=True)
+    df_clients = df_clients[df_clients.id != id].reset_index(drop=True)
+
+    return redirect("/saisie")
+
+# AJOUT COMPTE
+@app.route("/compte", methods=["POST"])
+def ajouter_compte():
+    global df_comptes, df_compte_clients
+
+    nom_compte = request.form["new_compte"]
+    clients = request.form.getlist("clients")
+
+    if not clients:
+        return redirect("/saisie")
+
+    new_id = df_comptes["id"].max() + 1 if not df_comptes.empty else 0
+
+    df_comptes.loc[new_id] = {
+        "id": new_id,
+        "nom_compte" : nom_compte,
+        "id_client": None
+    }
+
+    part = 1/len(clients)
+
+    for client in clients:
+
+        df_compte_clients.loc[len(df_compte_clients)] = [
+            new_id,
+            int(client),
+            part
+        ]
+
+    return redirect("/saisie")
+
+@app.route("/supprimer_compte/<int:id>")
+def supprimer_compte(id):
+
+    global df_comptes, df_revenus, df_depenses, df_credits, df_compte_clients
+
+    df_revenus = df_revenus[df_revenus.id_compte != id].reset_index(drop=True)
+    df_depenses = df_depenses[df_depenses.id_compte != id].reset_index(drop=True)
+    df_credits = df_credits[df_credits.id_compte != id].reset_index(drop=True)
+    df_compte_clients = df_compte_clients[df_compte_clients.id_compte != id].reset_index(drop=True)
+    df_comptes = df_comptes[df_comptes.id != id].reset_index(drop=True)
+
+    return redirect("/saisie")
+
 
 # AJOUT REVENU
 @app.route("/revenu", methods=["POST"])
@@ -49,7 +123,9 @@ def ajouter_revenu():
     mois = request.form["mois"]
     mois = int(mois) if mois else None
 
-    new_id = len(df_revenus)
+    id_compte = int(request.form["id_compte"])
+
+    new_id = df_revenus["id"].max() + 1 if not df_revenus.empty else 0
 
     df_revenus.loc[new_id] = [
         new_id,
@@ -57,7 +133,8 @@ def ajouter_revenu():
         montant,
         periodicite,
         jour,
-        mois
+        mois,
+        id_compte
     ]
 
     return redirect("/saisie")
@@ -67,7 +144,7 @@ def supprimer_revenu(id):
 
     global df_revenus
 
-    df_revenus = df_revenus[df_revenus.id != id]
+    df_revenus = df_revenus[df_revenus.id != id].reset_index(drop=True)
 
     return redirect("/saisie")
 
@@ -86,7 +163,9 @@ def ajouter_depense():
     mois = request.form["mois"]
     mois = int(mois) if mois else None
 
-    new_id = len(df_depenses)
+    id_compte = int(request.form["id_compte"])
+
+    new_id = df_depenses["id"].max() + 1 if not df_depenses.empty else 0
 
     df_depenses.loc[new_id] = [
         new_id,
@@ -94,7 +173,8 @@ def ajouter_depense():
         montant,
         type_depense,
         jour,
-        mois
+        mois,
+        id_compte
     ]
 
     return redirect("/saisie")
@@ -104,7 +184,7 @@ def supprimer_depense(id):
 
     global df_depenses
 
-    df_depenses = df_depenses[df_depenses.id != id]
+    df_depenses = df_depenses[df_depenses.id != id].reset_index(drop=True)
 
     return redirect("/saisie")
 
@@ -123,14 +203,17 @@ def ajouter_epargne():
     taux = request.form["taux"]
     taux = float(taux) if taux else 0
 
-    new_id = len(df_epargnes)
+    id_client = int(request.form["id_client"])
+
+    new_id = df_epargnes["id"].max() + 1 if not df_epargnes.empty else 0
 
     df_epargnes.loc[new_id] = [
         new_id,
         type_epargne,
         solde,
         versement,
-        taux
+        taux,
+        id_client
     ]
 
     return redirect("/saisie")
@@ -140,7 +223,7 @@ def supprimer_epargne(id):
 
     global df_epargnes
 
-    df_epargnes = df_epargnes[df_epargnes.id != id]
+    df_epargnes = df_epargnes[df_epargnes.id != id].reset_index(drop=True)
 
     return redirect("/saisie")
 
@@ -157,8 +240,9 @@ def ajouter_credit():
     duree_initiale = int(request.form["duree_initiale"])
     mensualite = float(request.form["mensualite"])
     fin_credit = request.form["fin_credit"]    
+    id_compte = int(request.form["id_compte"])
 
-    new_id = len(df_credits)
+    new_id = df_credits["id"].max() + 1 if not df_credits.empty else 0
 
     df_credits.loc[new_id] = [
         new_id,
@@ -168,7 +252,8 @@ def ajouter_credit():
         taux,
         duree_initiale,
         mensualite,
-        fin_credit
+        fin_credit,
+        id_compte
     ]
 
     return redirect("/saisie")
@@ -178,7 +263,7 @@ def supprimer_credit(id):
 
     global df_credits
 
-    df_credits = df_credits[df_credits.id != id]
+    df_credits = df_credits[df_credits.id != id].reset_index(drop=True)
 
     return redirect("/saisie")
 
