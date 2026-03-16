@@ -9,6 +9,7 @@ from models.revenu import Revenu
 from models.depense import Depense
 from models.credit import Credit
 from models.epargne import Epargne
+from models.patrimoine import Patrimoine
 
 app = Flask(__name__)
 
@@ -33,6 +34,7 @@ def generate_df():
     df_depenses = []
     df_credits = []
     df_epargnes = []
+    df_patrimoines = []
 
     for cid, client in clients.items():
         for r in client.revenus:
@@ -81,13 +83,26 @@ def generate_df():
                 "id_compte": cr.id_compte
             })
 
+        for p in client.patrimoines:
+            df_patrimoines.append({
+                "id": id(p),
+                "type_patrimoine": p.type_patrimoine,
+                "nom": p.nom,
+                "valeur": p.valeur,
+                "part": p.part,
+                "revenu": id(p.revenu) if p.revenu else None,
+                "credit": id(p.credit) if p.credit else None,
+                "id_client": cid
+            })
+
     return {
         "clients": df_clients,
-        "comptes": pd.DataFrame([{"id": k, "nom_compte": v.nom_compte} for k,v in comptes.items()]),
+        "comptes": df_comptes,
         "revenus": pd.DataFrame(df_revenus),
         "depenses": pd.DataFrame(df_depenses),
         "credits": pd.DataFrame(df_credits),
-        "epargnes": pd.DataFrame(df_epargnes)
+        "epargnes": pd.DataFrame(df_epargnes),
+        "patrimoines": pd.DataFrame(df_patrimoines)
     }
 
 # Routes
@@ -107,9 +122,11 @@ def saisie():
         depenses=dfs["depenses"].to_dict(orient="records"),
         epargnes=dfs["epargnes"].to_dict(orient="records"),
         credits=dfs["credits"].to_dict(orient="records"),
+        patrimoines=dfs["patrimoines"].to_dict(orient="records"),
         type_revenu=Revenu.TYPE_REVENU,
         type_epargne={k:v["nom"] for k,v in Epargne.TYPE_EPARGNE.items()},
         type_credit={k:v["nom"] for k,v in Credit.REGLES_CREDIT.items()},
+        type_patrimoine=Patrimoine.TYPE_PATRIMOINE,
         jours=JOURS,
         mois=MOIS
     )
@@ -243,6 +260,76 @@ def supprimer_credit(id_client, item_id):
     client = clients[id_client]
     client.credits = [c for c in client.credits if id(c) != item_id]
     return redirect("/saisie")
+
+
+# Patrimoine
+@app.route("/patrimoine", methods=["POST"])
+def ajouter_patrimoine():
+
+    client_id = int(request.form["id_client"])
+    revenu_id = request.form.get("id_revenu")
+    credit_id = request.form.get("id_credit")
+
+    type_patrimoine = request.form["type_patrimoine"]
+    nom = request.form["nom"]
+    valeur = float(request.form["valeur"])
+    part = float(request.form.get("part", 100))
+
+    revenu_associe = None
+
+    if revenu_id:
+        revenu_id = int(revenu_id)
+
+        for r in clients[client_id].revenus:
+            if id(r) == revenu_id:
+                revenu_associe = r
+                break
+
+    credit_associe = None
+
+    if credit_id:
+        credit_id = int(credit_id)
+
+        for c in clients[client_id].credits:
+            if id(c) == credit_id:
+                credit_associe = c
+                break
+
+    patrimoine = Patrimoine(
+        type_patrimoine,
+        nom,
+        valeur,
+        part,
+        revenu=revenu_associe,
+        credit=credit_associe
+    )
+
+    clients[client_id].ajouter_patrimoine(patrimoine)
+
+    return redirect("/saisie")
+
+@app.route("/supprimer_patrimoine/<int:id_client>/<int:item_id>")
+def supprimer_patrimoine(id_client, item_id):
+
+    client = clients[id_client]
+
+    client.patrimoines = [
+        p for p in client.patrimoines
+        if id(p) != item_id
+    ]
+
+    return redirect("/saisie")
+
+# Tests dataframes
+@app.route("/debug")
+def debug():
+    dfs = generate_df()
+    html = ""
+    for k,v in dfs.items():
+        html += f"<h2>{k}</h2>"
+        html += v.to_html()
+        html += "<hr>"
+    return html
 
 if __name__ == "__main__":
     app.run(debug=True)

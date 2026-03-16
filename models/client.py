@@ -3,6 +3,7 @@ from models.credit import Credit
 from models.epargne import Epargne
 from models.depense import Depense
 from models.revenu import Revenu
+from models.patrimoine import Patrimoine
 from typing import List
 from datetime import datetime
 
@@ -16,6 +17,7 @@ class Client:
         self.credits: List[Credit] = []
         self.epargnes: List[Epargne] = []
         self.comptes: List[Compte] = []
+        self.patrimoines: List[Patrimoine] = []
 
 
 
@@ -36,6 +38,8 @@ class Client:
     def ajouter_compte(self, compte: Compte):
         self.comptes.append(compte)
 
+    def ajouter_patrimoine(self, patrimoine: Patrimoine):
+        self.patrimoines.append(patrimoine)
 
     # Création date
     def _creer_date(self, jour: int, mois: int, annee: int):
