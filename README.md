@@ -48,7 +48,6 @@ finance_app/
 
 ├── data/                     # sauvegarde des données
 │   ├── csv_manager.py
-│   ├── dataframes.py
 │   └── sauvegardes/
 |
 ├── templates/                # HTML
