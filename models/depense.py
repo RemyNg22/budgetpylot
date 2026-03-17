@@ -2,16 +2,11 @@ class Depense:
 
     CATEGORIE_DEPENSE = (
         "Loyer",
-        "Crédit immobilier",
-        "Charge immobilière",
+        "Charge immobilière (hors crédit)",
         "Assurance habitation",
         "Assurance automobile",
         "Assurance santé",
         "Autre assurance",
-        "Crédit automobile",
-        "LOA",
-        "LLD",
-        "Autre crédit",
         "Electricité",
         "Gaz",
         "Autre énergie",
@@ -25,7 +20,7 @@ class Depense:
         "Frais de santé",
         "Loisir",
         "Vacances",
-        "Autre"
+        "Autre (hors crédit, LLD, LOA)"
     )
 
     TYPE_DEPENSE = ("fixe", "variable_mensuelle", "unique")

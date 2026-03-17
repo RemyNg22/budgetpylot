@@ -7,7 +7,9 @@ class Credit:
         2: {"nom": "Crédit in fine", "duree_max": 360},
         3: {"nom": "Prêt relais", "duree_max": 36},
         4: {"nom": "Crédit à la consommation", "duree_max": 120},
-        5: {"nom": "Crédit renouvelable", "duree_max": None}
+        5: {"nom": "Crédit renouvelable", "duree_max": None},
+        6: {"nom": "LOA", "duree_max": None},
+        7: {"nom": "LLD", "duree_max": None}
     }
 
     def __init__(self, type_de_credit, capital_emprunte, crd, taux, duree_initiale, mensualite, fin_credit):

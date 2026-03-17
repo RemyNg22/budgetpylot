@@ -83,11 +83,13 @@ class Client:
     def appliquer_flux_sur_compte(
         self,
         compte: Compte,
+        compte_id: int,
         date_du_jour: datetime,
         date_cible: datetime
     ):
         """
         Simule les flux entre date_du_jour et date_cible
+        uniquement pour le compte concerné
         """
 
         mois_actuel = date_du_jour.month
@@ -99,8 +101,12 @@ class Client:
             if datetime(annee_actuelle, mois_actuel, 1) > date_cible:
                 break
 
-            # Revenus
+
+            # REVENUS
             for rev in self.revenus:
+
+                if getattr(rev, "id_compte", None) != compte_id:
+                    continue
 
                 montant = rev.montant_pour_mois(mois_actuel)
 
@@ -109,48 +115,57 @@ class Client:
 
                 jour = rev.jour or 1
 
-                date_mvt = self._creer_date(jour, mois_actuel,annee_actuelle)
+                date_mvt = self._creer_date(jour, mois_actuel, annee_actuelle)
 
                 if date_du_jour <= date_mvt <= date_cible:
                     compte.appliquer_mouvement(montant, "credit", "revenu", date_mvt)
 
 
-            # Dépenses
+            # DEPENSES
             for dep in self.depenses:
+
+                if getattr(dep, "id_compte", None) != compte_id:
+                    continue
 
                 if not dep.est_a_appliquer(mois_actuel):
                     continue
 
                 jour = dep.jour or 1
 
-                mois_depense = (dep.mois if dep.type_depense == "unique" else mois_actuel)
+                mois_depense = (
+                    dep.mois if dep.type_depense == "unique"
+                    else mois_actuel
+                )
 
                 date_mvt = self._creer_date(jour, mois_depense, annee_actuelle)
 
                 if date_du_jour <= date_mvt <= date_cible:
+                    compte.appliquer_mouvement(dep.montant, "debit", "depense", date_mvt)
 
-                    compte.appliquer_mouvement(dep.montant, "debit", "depense",date_mvt)
 
-
-            # Crédits
+            # CREDITS (mensualités)
             for cred in self.credits:
 
+                if getattr(cred, "id_compte", None) != compte_id:
+                    continue
+
                 montant = cred.mensualite_client(self)
+
+                if montant <= 0:
+                    continue
 
                 date_mvt = self._creer_date(1, mois_actuel, annee_actuelle)
 
                 if date_du_jour <= date_mvt <= date_cible:
-
                     compte.appliquer_mouvement(montant, "debit", "credit", date_mvt)
 
 
-            # Passage mois suivant
+            # MOIS SUIVANT
             if mois_actuel == 12:
                 mois_actuel = 1
                 annee_actuelle += 1
             else:
                 mois_actuel += 1
-
 
     # Affichage
     def __repr__(self):
