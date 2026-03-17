@@ -1,5 +1,33 @@
 class Depense:
 
+    CATEGORIE_DEPENSE = (
+        "Loyer",
+        "Crédit immobilier",
+        "Charge immobilière",
+        "Assurance habitation",
+        "Assurance automobile",
+        "Assurance santé",
+        "Autre assurance",
+        "Crédit automobile",
+        "LOA",
+        "LLD",
+        "Autre crédit",
+        "Electricité",
+        "Gaz",
+        "Autre énergie",
+        "Box internet",
+        "Forfait mobile",
+        "Abonnement numérique",
+        "Impôts et taxes",
+        "Alimentation",
+        "Transport",
+        "Habillement",
+        "Frais de santé",
+        "Loisir",
+        "Vacances",
+        "Autre"
+    )
+
     TYPE_DEPENSE = ("fixe", "variable_mensuelle", "unique")
 
     def __init__(
@@ -7,12 +35,16 @@ class Depense:
         nom: str,
         montant: float,
         type_depense: str,
+        categorie_depense: str,
         jour: int | None = None,
         mois: int | None = None
     ):
 
         if type_depense not in self.TYPE_DEPENSE:
             raise ValueError("Type de dépense invalide")
+        
+        if categorie_depense not in self.CATEGORIE_DEPENSE:
+            raise ValueError("Catégorie de dépense invalide")
 
         if montant <= 0:
             raise ValueError("Le montant doit être positif")
@@ -34,6 +66,7 @@ class Depense:
         self.nom = nom
         self.montant = float(montant)
         self.type_depense = type_depense
+        self.categorie_depense = categorie_depense
         self.jour = jour
         self.mois = mois
 

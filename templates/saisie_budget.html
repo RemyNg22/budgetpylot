@@ -128,6 +128,13 @@
         <option value="variable_mensuelle">Variable</option>
         <option value="unique">Unique</option>
     </select><br>
+
+    Catégorie :
+    <select name="categorie_depense">
+        {% for cat in categorie_depense %}
+        <option value="{{ cat }}">{{ cat }}</option>
+        {% endfor %}
+    </select><br>
     Jour : <select name="jour">{% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}</select>
     Mois : <select name="mois"><option value="">--</option>{% for m in mois %}<option value="{{ m }}">{{ m }}</option>{% endfor %}</select><br>
     <button type="submit">Ajouter</button>
@@ -153,45 +160,6 @@
 </div>
 <hr>
 
-<div class="section">
-
-<h2>Ajouter une épargne</h2>
-<form method="POST" action="/epargne">
-    Client :
-    <select name="id_client">
-        {% for c in clients %}
-        <option value="{{ c.id }}">{{ c.nom }}</option>
-        {% endfor %}
-    </select><br>
-    Type :
-    <select name="type_epargne">
-        {% for k,v in type_epargne.items() %}
-        <option value="{{ k }}">{{ v }}</option>
-        {% endfor %}
-    </select><br>
-    Solde : <input type="number" step="0.01" name="solde"><br>
-    Versement mensuel : <input type="number" step="0.01" name="versement_mensuel"><br>
-    Taux : <input type="number" step="0.01" name="taux"><br>
-    <button type="submit">Ajouter</button>
-</form>
-
-<h3>Epargnes enregistrées</h3>
-<table>
-<tr><th>Client</th><th>Type</th><th>Solde</th><th>Versement</th><th>Taux</th><th>Action</th></tr>
-{% for e in epargnes %}
-<tr>
-    <td>{{ e.id_client }}</td>
-    <td>{{ e.type_epargne }}</td>
-    <td>{{ e.solde }}</td>
-    <td>{{ e.versement }}</td>
-    <td>{{ e.taux }}</td>
-    <td><a href="/supprimer_epargne/{{ e.id_client }}/{{ e.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
-
-</div>
-<hr>
 
 <div class="section">
 
@@ -244,6 +212,46 @@
 
 </div>
 
+<hr>
+
+<div class="section">
+
+<h2>Ajouter une épargne</h2>
+<form method="POST" action="/epargne">
+    Client :
+    <select name="id_client">
+        {% for c in clients %}
+        <option value="{{ c.id }}">{{ c.nom }}</option>
+        {% endfor %}
+    </select><br>
+    Type :
+    <select name="type_epargne">
+        {% for k,v in type_epargne.items() %}
+        <option value="{{ k }}">{{ v }}</option>
+        {% endfor %}
+    </select><br>
+    Solde : <input type="number" step="0.01" name="solde"><br>
+    Versement mensuel : <input type="number" step="0.01" name="versement_mensuel"><br>
+    Taux : <input type="number" step="0.01" name="taux"><br>
+    <button type="submit">Ajouter</button>
+</form>
+
+<h3>Epargnes enregistrées</h3>
+<table>
+<tr><th>Client</th><th>Type</th><th>Solde</th><th>Versement</th><th>Taux</th><th>Action</th></tr>
+{% for e in epargnes %}
+<tr>
+    <td>{{ e.id_client }}</td>
+    <td>{{ e.type_epargne }}</td>
+    <td>{{ e.solde }}</td>
+    <td>{{ e.versement }}</td>
+    <td>{{ e.taux }}</td>
+    <td><a href="/supprimer_epargne/{{ e.id_client }}/{{ e.id }}">Supprimer</a></td>
+</tr>
+{% endfor %}
+</table>
+
+</div>
 <hr>
 
 <div class="section">

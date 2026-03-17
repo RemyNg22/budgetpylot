@@ -54,6 +54,7 @@ def generate_df():
                 "nom": d.nom,
                 "montant": d.montant,
                 "type_depense": d.type_depense,
+                "categorie_depense": d.categorie_depense,
                 "jour": d.jour,
                 "mois": d.mois,
                 "id_client": cid,
@@ -203,10 +204,11 @@ def ajouter_depense():
     nom = request.form["nom"]
     montant = float(request.form["montant"])
     type_depense = request.form["type_depense"]
+    categorie_depense = request.form["categorie_depense"]
     jour = int(request.form["jour"])
     mois = int(request.form["mois"]) if request.form["mois"] else None
 
-    dep = Depense(nom, montant, type_depense, jour, mois)
+    dep = Depense(nom, montant, type_depense, categorie_depense, jour, mois)
 
     dep.id_compte = compte_id
 
