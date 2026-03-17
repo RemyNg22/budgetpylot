@@ -136,8 +136,8 @@
     Montant : <input type="number" step="0.01" name="montant" required><br>
     Type :
     <select name="type_depense">
-        {% for t, v in type_depense.items() %}
-        <option value="{{ t }}">{{ v }}</option>
+        {% for t in type_depense%}
+        <option value="{{ t }}">{{ t }}</option>
         {% endfor %}
     </select><br>
     Catégorie :
