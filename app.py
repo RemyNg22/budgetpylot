@@ -144,6 +144,22 @@ def index():
 @app.route("/saisie")
 def saisie():
     dfs = generate_df()
+    client_names = {c['id']: c['nom'] for c in dfs['clients'].to_dict(orient="records")}
+    compte_names = {c['id']: c['nom_compte'] for c in dfs['comptes'].to_dict(orient="records")}
+    mois_noms = {
+        1: "Janvier",
+        2: "Février",
+        3: "Mars",
+        4: "Avril",
+        5: "Mai",
+        6: "Juin",
+        7: "Juillet",
+        8: "Août",
+        9: "Septembre",
+        10: "Octobre",
+        11: "Novembre",
+        12: "Décembre"
+    }
     return render_template(
         "saisie_budget.html",
         clients=dfs["clients"].to_dict(orient="records"),
@@ -160,7 +176,10 @@ def saisie():
         type_epargne={k:v["nom"] for k,v in Epargne.TYPE_EPARGNE.items()},
         type_patrimoine=Patrimoine.TYPE_PATRIMOINE,
         jours=JOURS,
-        mois=MOIS
+        mois=MOIS,
+        mois_noms =mois_noms,
+        client_names=client_names,
+        compte_names=compte_names
     )
 
 # Client
