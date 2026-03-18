@@ -12,7 +12,7 @@ class Credit:
         7: {"nom": "LLD", "duree_max": None}
     }
 
-    def __init__(self, type_de_credit, capital_emprunte, crd, taux, duree_initiale, mensualite, fin_credit):
+    def __init__(self, type_de_credit, capital_emprunte, crd, taux, duree_initiale, mensualite, fin_credit, jour_echeance=1, compte=None):
 
         if type_de_credit not in self.REGLES_CREDIT:
             raise ValueError("Type de crédit invalide")
@@ -45,6 +45,8 @@ class Credit:
         else:
             self.fin_credit = fin_credit
 
+        self.jour_echeance = jour_echeance
+        self.compte = compte 
         self.emprunteur = {}
 
     def ajouter_emprunteur(self, client, part: float = 1.0):

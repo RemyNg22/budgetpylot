@@ -211,7 +211,8 @@ def ajouter_compte():
     if not nom:
         return safe_redirect("Nom de compte invalide")
 
-    compte = Compte("Banque X", nom, 0)
+    solde_initial = parse_float(request.form.get("solde_initial"), 0)
+    compte = Compte("Banque X", nom, solde_initial)
 
     for cid in client_ids:
         cid = parse_int(cid)
@@ -255,6 +256,9 @@ def ajouter_revenu():
 
     rev.id_compte = compte_id
     clients[client_id].ajouter_revenu(rev)
+    compte = comptes[compte_id]
+    date_revenu = datetime(datetime.now().year, rev.mois if rev.mois else 1, rev.jour if rev.jour else 1)
+    compte.appliquer_mouvement(rev.montant, "credit", f"Revenu: {rev.type_de_revenu}", date_revenu)
 
     return redirect("/saisie")
 
@@ -297,6 +301,10 @@ def ajouter_depense():
     dep.id_compte = compte_id
     clients[client_id].ajouter_depense(dep)
 
+    compte = comptes[compte_id]
+    date_depense = datetime(datetime.now().year, dep.mois if dep.mois else 1, dep.jour if dep.jour else 1)
+    compte.appliquer_mouvement(dep.montant, "debit", f"Dépense: {dep.nom}", date_depense)
+
     return redirect("/saisie")
 
 @app.route("/supprimer_depense/<int:id_client>/<int:item_id>")
@@ -310,24 +318,77 @@ def supprimer_depense(id_client, item_id):
 # Credit
 @app.route("/credit", methods=["POST"])
 def ajouter_credit():
-    client_id = parse_int(request.form.get("id_client"))
     compte_id = parse_int(request.form.get("id_compte"))
     type_credit = parse_int(request.form.get("type_credit"))
-
     capital_emprunte = parse_float(request.form.get("capital_emprunte"))
     crd = parse_float(request.form.get("crd"))
     taux = parse_float(request.form.get("taux"))
     duree_initiale = parse_int(request.form.get("duree_initiale"))
     mensualite = parse_float(request.form.get("mensualite"))
-    fin_credit = request.form.get("fin_credit")
+    fin_credit_str = request.form.get("fin_credit")
+    jour_echeance = parse_int(request.form.get("jour_echeance"), 1)
+    date_debut_str = request.form.get("date_debut")
 
-    if None in (client_id, compte_id, type_credit, capital_emprunte, crd, taux, duree_initiale, mensualite):
-        return safe_redirect("Erreur crédit")
+    emprunteurs_ids = request.form.getlist("emprunteurs")
+    parts_str = request.form.getlist("parts") 
 
-    cr = Credit(type_credit, capital_emprunte, crd, taux, duree_initiale, mensualite, fin_credit)
+    if not date_debut_str:
+        return safe_redirect("La date de début du crédit est obligatoire")
+    try:
+        date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
+    except ValueError:
+        return safe_redirect("Format date de début invalide (jj-mm-aaaa)")
+
+    if compte_id not in comptes:
+        return safe_redirect("Compte invalide")
+    
+    compte = comptes[compte_id]
+
+    try:
+        cr = Credit(
+            type_de_credit=type_credit,
+            capital_emprunte=capital_emprunte,
+            crd=crd,
+            taux=taux,
+            duree_initiale=duree_initiale,
+            mensualite=mensualite,
+            fin_credit=fin_credit_str,
+            jour_echeance=jour_echeance,
+            compte=compte
+        )
+
+        for cid_str, part_str in zip(emprunteurs_ids, parts_str):
+            cid = parse_int(cid_str)
+            part = parse_float(part_str, 100) / 100
+            if cid in clients:
+                cr.ajouter_emprunteur(clients[cid], part)
+
+        if cr.nombre_emprunteurs() == 0 and emprunteurs_ids:
+            cid = parse_int(emprunteurs_ids[0])
+            cr.ajouter_emprunteur(clients[cid], 1.0)
+
+    except Exception as e:
+        return safe_redirect(f"Erreur création crédit: {e}")
+
     cr.id_compte = compte_id
 
-    clients[client_id].ajouter_credit(cr)
+
+    for client in cr.emprunteur.keys():
+        client.ajouter_credit(cr)
+
+    for i in range(cr.duree_initiale):
+        mois = (date_debut.month + i - 1) % 12 + 1
+        annee = date_debut.year + (date_debut.month + i - 1) // 12
+        jour = min(cr.jour_echeance, 28)
+        date_mensualite = datetime(annee, mois, jour)
+
+        compte.appliquer_mouvement(
+            cr.mensualite,
+            "debit",
+            f"Crédit: {cr.REGLES_CREDIT[cr.type_de_credit]['nom']}",
+            date_mensualite
+        )
+
     return redirect("/saisie")
 
 @app.route("/supprimer_credit/<int:id_client>/<int:item_id>")
