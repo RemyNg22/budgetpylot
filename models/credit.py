@@ -12,7 +12,18 @@ class Credit:
         7: {"nom": "LLD", "duree_max": None}
     }
 
-    def __init__(self, type_de_credit, capital_emprunte, crd, taux, duree_initiale, mensualite, fin_credit, jour_echeance=1, compte=None):
+    def __init__(self, 
+                 type_de_credit : int, 
+                 capital_emprunte: float, 
+                 crd: float, 
+                 taux:float, 
+                 duree_initiale: int, 
+                 mensualite: float, 
+                 fin_credit, 
+                 jour_echeance: int=1, 
+                 compte=None,
+                 id_compte: int | None = None,
+                 deja_preleve: bool = False):
 
         if type_de_credit not in self.REGLES_CREDIT:
             raise ValueError("Type de crédit invalide")
@@ -39,15 +50,29 @@ class Credit:
         self.taux = float(taux)
         self.duree_initiale = int(duree_initiale)
         self.mensualite = float(mensualite)
+        self.jour_echeance = jour_echeance
+        self.compte = compte
+        self.id_compte = id_compte
+        self.deja_preleve = deja_preleve
+        self.emprunteur = {}
 
-        if isinstance(fin_credit, str):
-            self.fin_credit = datetime.strptime(fin_credit, "%d-%m-%Y")
-        else:
+        if isinstance(fin_credit, datetime):
             self.fin_credit = fin_credit
 
-        self.jour_echeance = jour_echeance
-        self.compte = compte 
-        self.emprunteur = {}
+        elif isinstance(fin_credit, str):
+            for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
+                try:
+                    self.fin_credit = datetime.strptime(fin_credit, fmt)
+                    break
+
+                except ValueError:
+                    continue
+            else:
+                raise ValueError('Format de date invalide. Attendu : YYYY-MM-DD ou DD-MM-YYYY')
+            
+        else:
+            raise TypeError("fin_credit doit être une date ou chaine de caractères")
+
 
     def ajouter_emprunteur(self, client, part: float = 1.0):
         if not (0 < part <= 1):
@@ -70,12 +95,16 @@ class Credit:
     def pourcentages_emprunteurs(self):
         return {c.nom: p for c, p in self.emprunteur.items()}
 
+    @property
+    def nom(self) -> str:
+        """pour accéder au nom du type de crédit."""
+        return self.REGLES_CREDIT[self.type_de_credit]["nom"]
+ 
     def __repr__(self):
-
-        noms = ", ".join(
-            f"{c.nom} ({p*100:.0f}%)" for c, p in self.emprunteur.items()
+        noms = ", ".join(f"{c.nom} ({p * 100:.0f}%)" for c, p in self.emprunteur.items())
+        
+        return (
+            f"{self.nom} - "
+            f"Mensualité totale : {self.mensualite} € - "
+            f"Emprunteurs : {noms}"
         )
-
-        nom_credit = self.REGLES_CREDIT[self.type_de_credit]["nom"]
-
-        return f"{nom_credit} - Mensualité totale: {self.mensualite} € - Emprunteurs: {noms}"

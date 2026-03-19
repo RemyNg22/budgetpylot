@@ -1,0 +1,40 @@
+fonction à créer pour calcul
+
+Revenus totaux du mois
+Dépenses totales du mois (fixes / variables / uniques)
+Solde mensuel (revenus - dépenses - mensualités crédit)
+Taux d'épargne (épargne / revenus)
+Reste à vivre
+
+
+Solde actuel par compte
+Solde estimé fin de mois
+Solde estimé au prochain salaire
+Solde estimé à date libre
+Évolution du solde sur 12 mois (courbe)
+
+
+Taux d'endettement global (mensualités / revenus) — seuil 35% réglementaire
+CRD total tous crédits confondus
+Coût total restant (intérêts)
+Durée restante par crédit
+Répartition des mensualités par type de crédit
+
+
+Encours total épargne
+Projection épargne à 1 an / 3 ans / 5 ans / 10 ans avec intérêts composés
+Capacité d'épargne mensuelle (reste à vivre - dépenses variables)
+Répartition par type de produit (livrets / AV / PEA…)
+
+
+Patrimoine brut total (valeur détenue)
+Patrimoine net (brut - CRD)
+Répartition immobilier / financier / autre
+Rendement locatif brut (loyer annuel / valeur bien)
+Effort d'épargne immobilier (mensualité - loyer perçu)
+
+
+Revenus du foyer (somme des clients liés)
+Dépenses communes vs dépenses individuelles
+Taux d'endettement du foyer
+Contribution de chaque co-emprunteur aux crédits

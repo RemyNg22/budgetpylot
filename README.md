@@ -38,7 +38,6 @@ finance_app/
 │   ├── depense.py
 │   ├── revenu.py
 │   ├── patrimoine.py
-│   ├── test_objet.py         # !!! à masquer dès que finalisation projet !!!
 │   └── epargne.py
 
 ├── services/                 # calculs métier

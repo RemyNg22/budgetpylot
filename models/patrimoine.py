@@ -51,12 +51,11 @@ class Patrimoine:
         self.revenu = revenu
 
     def __repr__(self):
-
         credit_nom = self.credit.nom if self.credit else "Aucun crédit"
-        revenu_nom = self.revenu.nom if self.revenu else "Aucun revenu"
-
+        revenu_nom = self.revenu.type_de_revenu if self.revenu else "Aucun revenu"
+ 
         return (
             f"{self.type_patrimoine} - {self.nom} : "
             f"{self.valeur} € ({self.part}% détenu) | "
-            f"Crédit: {credit_nom} | Revenu: {revenu_nom}"
+            f"Crédit : {credit_nom} | Revenu : {revenu_nom}"
         )

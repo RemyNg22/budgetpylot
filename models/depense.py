@@ -32,7 +32,8 @@ class Depense:
         type_depense: str,
         categorie_depense: str,
         jour: int | None = None,
-        mois: int | None = None
+        mois: int | None = None, 
+        id_compte:int | None = None
     ):
 
         if type_depense not in self.TYPE_DEPENSE:
@@ -64,6 +65,7 @@ class Depense:
         self.categorie_depense = categorie_depense
         self.jour = jour
         self.mois = mois
+        self.id_compte = id_compte
 
     def est_a_appliquer(self, mois_actuel: int):
         """
@@ -78,8 +80,6 @@ class Depense:
         return False
 
     def __repr__(self):
-
         if self.type_depense == "unique":
             return f"{self.nom} (unique) - {self.montant} € le {self.jour}/{self.mois}"
-
         return f"{self.nom} ({self.type_depense}) - {self.montant} € chaque mois le {self.jour}"

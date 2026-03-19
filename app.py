@@ -14,9 +14,11 @@ from models.patrimoine import Patrimoine
 app = Flask(__name__)
 app.secret_key = "secret"
 
-# Stockage global
+# Stockage en mémoire pour export CSV futur
 clients = {}
 comptes = {}
+
+# compteur globaux
 next_client_id = 0
 next_compte_id = 0
 next_item_id = 0
@@ -24,13 +26,19 @@ next_item_id = 0
 JOURS = list(range(1, 29))
 MOIS = list(range(1, 13))
 
+MOIS_NOMS = {1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril", 
+             5: "Mai", 6: "Juin", 7: "Juillet", 8: "Août", 
+             9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
+}
+
+
 # Utilitaires
 def parse_int(value, default=None):
     try:
         if value in (None, ""):
             return default
         return int(value)
-    except:
+    except (ValueError, TypeError):
         return default
 
 
@@ -38,7 +46,8 @@ def parse_float(value, default=None):
     try:
         if value in (None, ""):
             return default
-        value = value.replace(",", ".")
+        if isinstance(value, str):
+            value = value.replace(",", ".")
         return float(value)
     except:
         return default
@@ -51,6 +60,10 @@ def safe_redirect(msg=None):
         flash(msg)
     return redirect("/saisie")
 
+def next_id() -> int:
+    global next_item_id
+    next_item_id += 1
+    return next_item_id
 
 # Dataframe
 def generate_df():
@@ -68,18 +81,18 @@ def generate_df():
     for cid, client in clients.items():
         for r in client.revenus:
             df_revenus.append({
-                "id": id(r),
+                "id": r.item_id,
                 "type_revenu": r.type_de_revenu,
                 "montant": r.montant,
                 "periodicite": r.periodicite,
                 "jour": r.jour,
                 "mois": r.mois,
                 "id_client": cid,
-                "id_compte": getattr(r, "id_compte", None)
+                "id_compte": r.id_compte,
             })
         for d in client.depenses:
             df_depenses.append({
-                "id": id(d),
+                "id": d.item_id,
                 "nom": d.nom,
                 "montant": d.montant,
                 "type_depense": d.type_depense,
@@ -87,11 +100,11 @@ def generate_df():
                 "jour": d.jour,
                 "mois": d.mois,
                 "id_client": cid,
-                "id_compte": getattr(d, "id_compte", None)
+                "id_compte": d.id_compte,
             })
         for cr in client.credits:
             df_credits.append({
-                "id": id(cr),
+                "id": cr.item_id,
                 "type_credit": cr.type_de_credit,
                 "capital_emprunte": cr.capital_emprunte,
                 "crd": cr.crd,
@@ -100,28 +113,28 @@ def generate_df():
                 "mensualite": cr.mensualite,
                 "fin_credit": cr.fin_credit.strftime("%d-%m-%Y"),
                 "id_client": cid,
-                "id_compte": getattr(cr, "id_compte", None)
+                "id_compte": cr.id_compte
             })
         for e in client.epargnes:
             df_epargnes.append({
-                "id": id(e),
+                "id": e.item_id,
                 "type_epargne": e.type_epargne,
                 "nom": e.nom,
                 "solde": e.solde,
                 "versement": e.versements_permanents,
                 "taux": e.taux,
-                "id_client": cid
+                "id_client": cid,
             })
 
         for p in client.patrimoines:
             df_patrimoines.append({
-                "id": id(p),
+                "id": p.item_id,
                 "type_patrimoine": p.type_patrimoine,
                 "nom": p.nom,
                 "valeur": p.valeur,
                 "part": p.part,
-                "revenu": id(p.revenu) if p.revenu else None,
-                "credit": id(p.credit) if p.credit else None,
+                "revenu": p.credit.nom if p.credit else None,
+                "credit": p.revenu.type_de_revenu if p.revenu else None,
                 "id_client": cid
             })
 
@@ -135,6 +148,8 @@ def generate_df():
         "patrimoines": pd.DataFrame(df_patrimoines)
     }
 
+
+
 # Routes
 
 @app.route("/")
@@ -146,20 +161,8 @@ def saisie():
     dfs = generate_df()
     client_names = {c['id']: c['nom'] for c in dfs['clients'].to_dict(orient="records")}
     compte_names = {c['id']: c['nom_compte'] for c in dfs['comptes'].to_dict(orient="records")}
-    mois_noms = {
-        1: "Janvier",
-        2: "Février",
-        3: "Mars",
-        4: "Avril",
-        5: "Mai",
-        6: "Juin",
-        7: "Juillet",
-        8: "Août",
-        9: "Septembre",
-        10: "Octobre",
-        11: "Novembre",
-        12: "Décembre"
-    }
+
+
     return render_template(
         "saisie_budget.html",
         clients=dfs["clients"].to_dict(orient="records"),
@@ -177,7 +180,7 @@ def saisie():
         type_patrimoine=Patrimoine.TYPE_PATRIMOINE,
         jours=JOURS,
         mois=MOIS,
-        mois_noms =mois_noms,
+        mois_noms =MOIS_NOMS,
         client_names=client_names,
         compte_names=compte_names
     )
@@ -196,8 +199,8 @@ def ajouter_client():
     return redirect("/saisie")
 
 @app.route("/supprimer_client/<int:id>")
-def supprimer_client(id):
-    clients.pop(id, None)
+def supprimer_client(cid):
+    clients.pop(cid, None)
     return redirect("/saisie")
 
 # Compte
@@ -225,8 +228,8 @@ def ajouter_compte():
     return redirect("/saisie")
 
 @app.route("/supprimer_compte/<int:id>")
-def supprimer_compte(id):
-    comptes.pop(id, None)
+def supprimer_compte(cid):
+    comptes.pop(cid, None)
     return redirect("/saisie")
 
 # Revenu
@@ -242,77 +245,74 @@ def ajouter_revenu():
     montant = parse_float(request.form.get("montant"))
     if montant is None or montant <= 0:
         return safe_redirect("Montant invalide")
+    
+    est_principal = request.form.get("est_revenu_principal") == "on"
 
     try:
         rev = Revenu(
-            request.form.get("type_revenu"),
-            montant,
-            request.form.get("periodicite"),
-            parse_int(request.form.get("jour")),
-            parse_int(request.form.get("mois"))
+            type_de_revenu=request.form.get("type_revenu"),
+            montant=montant,
+            periodicite=request.form.get("periodicite"),
+            jour=parse_int(request.form.get("jour")),
+            mois=parse_int(request.form.get("mois")),
+            id_compte=compte_id,
+            est_revenu_principal=est_principal,
         )
-    except:
-        return safe_redirect("Erreur revenu")
 
-    rev.id_compte = compte_id
+    except ValueError as e:
+        return safe_redirect(f"Erreur revenu : {e}")
+
+    rev.item_id = next_id()
     clients[client_id].ajouter_revenu(rev)
-    compte = comptes[compte_id]
-    date_revenu = datetime(datetime.now().year, rev.mois if rev.mois else 1, rev.jour if rev.jour else 1)
-    compte.appliquer_mouvement(rev.montant, "credit", f"Revenu: {rev.type_de_revenu}", date_revenu)
 
     return redirect("/saisie")
 
 @app.route("/supprimer_revenu/<int:id_client>/<int:item_id>")
 def supprimer_revenu(id_client, item_id):
     client = clients.get(id_client)
-    if not client:
-        return redirect("/saisie")
-    client.revenus = [r for r in client.revenus if id(r) != item_id]
+    if client:
+        client.revenus = [r for r in client.revenus if r.item_id != item_id]
     return redirect("/saisie")
+
 
 # Depense
 @app.route("/depense", methods=["POST"])
 def ajouter_depense():
-
     client_id = parse_int(request.form.get("id_client"))
     compte_id = parse_int(request.form.get("id_compte"))
-
+ 
     if client_id not in clients or compte_id not in comptes:
         return safe_redirect("Client ou compte invalide")
-
+ 
     montant = parse_float(request.form.get("montant"))
-    nom = parse_str(request.form.get("nom"))
-
+    nom     = parse_str(request.form.get("nom"))
+ 
     if not nom or montant is None or montant <= 0:
         return safe_redirect("Dépense invalide")
-
+ 
     try:
         dep = Depense(
-            nom,
-            montant,
-            request.form.get("type_depense"),
-            request.form.get("categorie_depense"),
-            parse_int(request.form.get("jour")),
-            parse_int(request.form.get("mois"))
+            nom=nom,
+            montant=montant,
+            type_depense=request.form.get("type_depense"),
+            categorie_depense=request.form.get("categorie_depense"),
+            jour=parse_int(request.form.get("jour")),
+            mois=parse_int(request.form.get("mois")),
+            id_compte=compte_id,
         )
-    except:
-        return safe_redirect("Erreur dépense")
-
-    dep.id_compte = compte_id
+    except ValueError as e:
+        return safe_redirect(f"Erreur dépense : {e}")
+ 
+    dep.item_id = next_id()
     clients[client_id].ajouter_depense(dep)
-
-    compte = comptes[compte_id]
-    date_depense = datetime(datetime.now().year, dep.mois if dep.mois else 1, dep.jour if dep.jour else 1)
-    compte.appliquer_mouvement(dep.montant, "debit", f"Dépense: {dep.nom}", date_depense)
-
     return redirect("/saisie")
-
+ 
+ 
 @app.route("/supprimer_depense/<int:id_client>/<int:item_id>")
 def supprimer_depense(id_client, item_id):
     client = clients.get(id_client)
-    if not client:
-        return redirect("/saisie")
-    client.depenses = [d for d in client.depenses if id(d) != item_id]
+    if client:
+        client.depenses = [d for d in client.depenses if d.item_id != item_id]
     return redirect("/saisie")
 
 # Credit
@@ -335,13 +335,13 @@ def ajouter_credit():
     if not date_debut_str:
         return safe_redirect("La date de début du crédit est obligatoire")
     try:
-        date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
+        date_debut = datetime.strptime(date_debut_str, "%Y-%m-%d")
     except ValueError:
-        return safe_redirect("Format date de début invalide (jj-mm-aaaa)")
-
+        return safe_redirect("Format date de début invalide")
+ 
     if compte_id not in comptes:
         return safe_redirect("Compte invalide")
-    
+ 
     compte = comptes[compte_id]
 
     try:
@@ -354,49 +354,41 @@ def ajouter_credit():
             mensualite=mensualite,
             fin_credit=fin_credit_str,
             jour_echeance=jour_echeance,
-            compte=compte
+            compte=compte,
+            id_compte=compte_id,
+            deja_preleve=request.form.get("deja_preleve") == "on",
         )
 
-        for cid_str, part_str in zip(emprunteurs_ids, parts_str):
-            cid = parse_int(cid_str)
-            part = parse_float(part_str, 100) / 100
-            if cid in clients:
+    except (ValueError, TypeError) as e:
+        return safe_redirect(f"Erreur création crédit : {e}")
+
+    for cid_str, part_str in zip(emprunteurs_ids, parts_str):
+        cid  = parse_int(cid_str)
+        part = (parse_float(part_str, 100) or 100) / 100
+        if cid in clients:
+            try:
                 cr.ajouter_emprunteur(clients[cid], part)
-
-        if cr.nombre_emprunteurs() == 0 and emprunteurs_ids:
-            cid = parse_int(emprunteurs_ids[0])
+            except ValueError as e:
+                return safe_redirect(f"Erreur emprunteur : {e}")
+ 
+    if cr.nombre_emprunteurs() == 0 and emprunteurs_ids:
+        cid = parse_int(emprunteurs_ids[0])
+        if cid in clients:
             cr.ajouter_emprunteur(clients[cid], 1.0)
-
-    except Exception as e:
-        return safe_redirect(f"Erreur création crédit: {e}")
-
-    cr.id_compte = compte_id
+ 
+    cr.item_id = next_id()
 
 
     for client in cr.emprunteur.keys():
         client.ajouter_credit(cr)
-
-    for i in range(cr.duree_initiale):
-        mois = (date_debut.month + i - 1) % 12 + 1
-        annee = date_debut.year + (date_debut.month + i - 1) // 12
-        jour = min(cr.jour_echeance, 28)
-        date_mensualite = datetime(annee, mois, jour)
-
-        compte.appliquer_mouvement(
-            cr.mensualite,
-            "debit",
-            f"Crédit: {cr.REGLES_CREDIT[cr.type_de_credit]['nom']}",
-            date_mensualite
-        )
 
     return redirect("/saisie")
 
 @app.route("/supprimer_credit/<int:id_client>/<int:item_id>")
 def supprimer_credit(id_client, item_id):
     client = clients.get(id_client)
-    if not client:
-        return redirect("/saisie")
-    client.credits = [c for c in client.credits if id(c) != item_id]
+    if client:
+        client.credits = [c for c in client.credits if c.item_id != item_id]
     return redirect("/saisie")
 
 
@@ -412,16 +404,20 @@ def ajouter_epargne():
     if client_id not in clients or type_epargne is None:
         return safe_redirect("Erreur épargne")
 
-    e = Epargne(type_epargne, solde, versement, taux)
+    try:
+        e = Epargne(type_epargne, solde, versement, taux)
+    except ValueError as e_err:
+        return safe_redirect(f"Erreur épargne : {e_err}")
+    
+    e.item_id = next_id()
     clients[client_id].ajouter_epargne(e)
-    return redirect("/saisie")
+    return redirect("/saisie")   
 
 @app.route("/supprimer_epargne/<int:id_client>/<int:item_id>")
 def supprimer_epargne(id_client, item_id):
     client = clients.get(id_client)
-    if not client:
-        return redirect("/saisie")
-    client.epargnes = [e for e in client.epargnes if id(e) != item_id]
+    if client:
+        client.epargnes = [e for e in client.epargnes if e.item_id != item_id]
     return redirect("/saisie")
 
 
@@ -441,51 +437,86 @@ def ajouter_patrimoine():
     if client_id not in clients or valeur is None:
         return safe_redirect("Erreur patrimoine")
 
-    revenu_associe = None
-    if revenu_id:
-        for r in clients[client_id].revenus:
-            if id(r) == revenu_id:
-                revenu_associe = r
-                break
-
-    credit_associe = None
-    if credit_id:
-        for c in clients[client_id].credits:
-            if id(c) == credit_id:
-                credit_associe = c
-                break
-
-    patrimoine = Patrimoine(
-        type_patrimoine,
-        nom,
-        valeur,
-        part,
-        revenu=revenu_associe,
-        credit=credit_associe
-    )
-
-    clients[client_id].ajouter_patrimoine(patrimoine)
-
+    client = clients[client_id]
+ 
+    revenu_associe = next(
+        (r for r in client.revenus if r.item_id == revenu_id), None
+    ) if revenu_id else None
+ 
+    credit_associe = next(
+        (c for c in client.credits if c.item_id == credit_id), None
+    ) if credit_id else None
+ 
+    try:
+        patrimoine = Patrimoine(
+            type_patrimoine=type_patrimoine,
+            nom=nom,
+            valeur=valeur,
+            part=part,
+            revenu=revenu_associe,
+            credit=credit_associe,
+        )
+    except ValueError as e:
+        return safe_redirect(f"Erreur patrimoine : {e}")
+ 
+    patrimoine.item_id = next_id()
+    client.ajouter_patrimoine(patrimoine)
     return redirect("/saisie")
 
 @app.route("/supprimer_patrimoine/<int:id_client>/<int:item_id>")
 def supprimer_patrimoine(id_client, item_id):
     client = clients.get(id_client)
-    if not client:
-        return redirect("/saisie")
-    client.patrimoines = [p for p in client.patrimoines if id(p) != item_id]
+    if client:
+        client.patrimoines = [p for p in client.patrimoines if p.item_id != item_id]
+
     return redirect("/saisie")
+
 
 # Tests dataframes
 @app.route("/debug")
 def debug():
     dfs = generate_df()
     html = ""
-    for k,v in dfs.items():
-        html += f"<h2>{k}</h2>"
-        html += v.to_html()
-        html += "<hr>"
+    for k, v in dfs.items():
+        html += f"<h2>{k}</h2>{v.to_html()}<hr>"
     return html
+
+
+@app.route("/projection/<int:id_client>/<int:id_compte>", methods=["GET"])
+def projection(id_client, id_compte):
+    """
+    Calcule les 3 horizons de projection pour un client et un compte donnés.
+    Paramètre GET optionnel : date_libre (format YYYY-MM-DD)
+    """
+    client = clients.get(id_client)
+    compte = comptes.get(id_compte)
+ 
+    if not client or not compte:
+        return safe_redirect("Client ou compte introuvable")
+ 
+    aujourd_hui = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+ 
+    date_libre = None
+    date_libre_str = request.args.get("date_libre")
+    if date_libre_str:
+        try:
+            date_libre = datetime.strptime(date_libre_str, "%Y-%m-%d")
+        except ValueError:
+            flash("Format de date libre invalide (attendu : YYYY-MM-DD)")
+ 
+    resultats = client.projections(compte, id_compte, aujourd_hui, date_libre)
+ 
+    return render_template(
+        "projection.html",
+        client=client,
+        compte=compte,
+        id_client=id_client,
+        id_compte=id_compte,
+        resultats=resultats,
+        aujourd_hui=aujourd_hui,
+        date_libre_str=date_libre_str or "",
+    )
+ 
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -2,258 +2,384 @@
 
 {% block content %}
 
+{# ------------------------------------------------------------------ #}
+{# CLIENTS                                                             #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter un client</h2>
-<form method="POST" action="/client">
+  <h2>Ajouter un client</h2>
+  <form method="POST" action="/client">
     Nom : <input type="text" name="nom" required>
     <button type="submit">Ajouter</button>
-</form>
+  </form>
 
-<h3>Clients enregistrés</h3>
-<table>
-<tr><th>Nom</th><th>Action</th></tr>
-{% for c in clients %}
-<tr>
-    <td>{{ c.nom }}</td>
-    <td><a href="/supprimer_client/{{ c.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+  <h3>Clients enregistrés</h3>
+  <table>
+    <tr><th>Nom</th><th>Action</th></tr>
+    {% for c in clients %}
+    <tr>
+      <td>{{ c.nom }}</td>
+      <td><a href="/supprimer_client/{{ c.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="2">Aucun client</td></tr>
+    {% endfor %}
+  </table>
 </div>
 <hr>
 
+{# ------------------------------------------------------------------ #}
+{# COMPTES                                                             #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter un compte</h2>
-<form method="POST" action="/compte">
+  <h2>Ajouter un compte</h2>
+  <form method="POST" action="/compte">
     Nom du compte : <input type="text" name="new_compte" required><br>
-    Solde initial : <input type="number" step="0.01" name="solde_initial" value="0"><br>
-    Clients : <br>
+    Solde actuel (aujourd'hui) : <input type="number" step="0.01" name="solde_initial" value="0" required><br>
+    Clients associés :<br>
     {% for c in clients %}
-        <input type="checkbox" name="clients" value="{{ c.id }}"> {{ c.nom }}<br>
+      <input type="checkbox" name="clients" value="{{ c.id }}"> {{ c.nom }}<br>
     {% endfor %}
     <button type="submit">Ajouter</button>
-</form>
+  </form>
 
-<h3>Comptes enregistrés</h3>
-<table>
-<tr><th>Nom</th><th>Solde</th><th>Action</th></tr>
-{% for comp in comptes %}
-<tr>
-    <td>{{ comp.nom_compte }}</td>
-    <td>{{ comp.solde if comp.solde is defined else 0 }}</td>
-    <td><a href="/supprimer_compte/{{ comp.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+  <h3>Comptes enregistrés</h3>
+  <table>
+    <tr><th>Nom</th><th>Solde actuel</th><th>Projection</th><th>Action</th></tr>
+    {% for comp in comptes %}
+    <tr>
+      <td>{{ comp.nom_compte }}</td>
+      <td>{{ comp.solde_initial }} €</td>
+      <td>
+        {% for c in clients %}
+          <a href="/projection/{{ c.id }}/{{ comp.id }}">📈 Projeter ({{ c.nom }})</a><br>
+        {% endfor %}
+      </td>
+      <td><a href="/supprimer_compte/{{ comp.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">Aucun compte</td></tr>
+    {% endfor %}
+  </table>
 </div>
 <hr>
 
+{# ------------------------------------------------------------------ #}
+{# REVENUS                                                             #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter un revenu</h2>
-<form method="POST" action="/revenu">
+  <h2>Ajouter un revenu</h2>
+  <form method="POST" action="/revenu">
     Client :
     <select name="id_client">
-        {% for c in clients %}
-        <option value="{{ c.id }}">{{ c.nom }}</option>
-        {% endfor %}
+      {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
     </select><br>
+
     Compte :
     <select name="id_compte">
-        {% for comp in comptes %}
-        <option value="{{ comp.id }}">{{ comp.nom_compte }}</option>
-        {% endfor %}
+      {% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}
     </select><br>
-    Type : 
+
+    Type :
     <select name="type_revenu">
-        {% for r in type_revenu %}
-        <option value="{{ r }}">{{ r }}</option>
-        {% endfor %}
+      {% for r in type_revenu %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
     </select><br>
+
     Montant : <input type="number" step="0.01" name="montant" required><br>
+
     Périodicité :
     <select name="periodicite">
-        <option value="mensuelle">Mensuelle</option>
-        <option value="annuelle">Annuelle</option>
-        <option value="unique">Unique</option>
+      <option value="mensuelle">Mensuelle</option>
+      <option value="annuelle">Annuelle</option>
+      <option value="unique">Unique</option>
     </select><br>
-    Jour : <select name="jour">{% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}</select>
-    Mois : <select name="mois"><option value="">--</option>{% for num, nom in mois_noms.items() %}<option value="{{ num }}">{{ nom }}</option>{% endfor %}</select><br>
-    <button type="submit">Ajouter</button>
-</form>
 
-<h3>Revenus enregistrés</h3>
-<table>
-<tr><th>Client</th><th>Compte</th><th>Type</th><th>Montant</th><th>Périodicité</th><th>Jour</th><th>Mois</th><th>Action</th></tr>
-{% for r in revenus %}
-<tr>
-    <td>{{ client_names[r.id_client] }}</td>
-    <td>{{ compte_names[r.id_compte] }}</td>
-    <td>{{ r.type_revenu }}</td>
-    <td>{{ r.montant }}</td>
-    <td>{{ r.periodicite }}</td>
-    <td>{{ r.jour }}</td>
-    <td>{{ mois_noms[r.mois] if r.mois else "--" }}</td>
-    <td><a href="/supprimer_revenu/{{ r.id_client }}/{{ r.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+    Jour de versement :
+    <select name="jour">
+      {% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}
+    </select><br>
+
+    Mois (si annuel/unique) :
+    <select name="mois">
+      <option value="">--</option>
+      {% for num, nom in mois_noms.items() %}
+        <option value="{{ num }}">{{ nom }}</option>
+      {% endfor %}
+    </select><br>
+
+    {# ✅ Nouveau champ #}
+    <input type="checkbox" name="est_revenu_principal" id="est_revenu_principal">
+    <label for="est_revenu_principal">Revenu principal (salaire de référence pour les projections)</label><br>
+
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h3>Revenus enregistrés</h3>
+  <table>
+    <tr>
+      <th>Client</th><th>Compte</th><th>Type</th><th>Montant</th>
+      <th>Périodicité</th><th>Jour</th><th>Mois</th><th>Principal</th><th>Action</th>
+    </tr>
+    {% for r in revenus %}
+    <tr>
+      <td>{{ client_names.get(r.id_client, "?") }}</td>
+      <td>{{ compte_names.get(r.id_compte, "?") }}</td>
+      <td>{{ r.type_revenu }}</td>
+      <td>{{ r.montant }} €</td>
+      <td>{{ r.periodicite }}</td>
+      <td>{{ r.jour }}</td>
+      <td>{{ mois_noms[r.mois] if r.mois else "--" }}</td>
+      <td>{{ "★" if r.get("est_revenu_principal") else "" }}</td>
+      <td><a href="/supprimer_revenu/{{ r.id_client }}/{{ r.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Aucun revenu</td></tr>
+    {% endfor %}
+  </table>
 </div>
 <hr>
 
+{# ------------------------------------------------------------------ #}
+{# DÉPENSES                                                            #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter une dépense</h2>
-<form method="POST" action="/depense">
+  <h2>Ajouter une dépense</h2>
+  <form method="POST" action="/depense">
     Client :
-    <select name="id_client">{% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}</select><br>
+    <select name="id_client">
+      {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
+    </select><br>
+
     Compte :
-    <select name="id_compte">{% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}</select><br>
+    <select name="id_compte">
+      {% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}
+    </select><br>
+
     Nom : <input type="text" name="nom" required><br>
     Montant : <input type="number" step="0.01" name="montant" required><br>
-    Type :
-    <select name="type_depense">{% for t in type_depense %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select><br>
-    Catégorie :
-    <select name="categorie_depense">{% for cat in categorie_depense %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}</select><br>
-    Jour : <select name="jour">{% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}</select>
-    Mois : <select name="mois"><option value="">--</option>{% for num, nom in mois_noms.items() %}<option value="{{ num }}">{{ nom }}</option>{% endfor %}</select><br>
-    <button type="submit">Ajouter</button>
-</form>
 
-<h3>Dépenses enregistrées</h3>
-<table>
-<tr><th>Client</th><th>Compte</th><th>Nom</th><th>Montant</th><th>Type</th><th>Catégorie</th><th>Jour</th><th>Mois</th><th>Action</th></tr>
-{% for d in depenses %}
-<tr>
-    <td>{{ client_names[d.id_client] }}</td>
-    <td>{{ compte_names[d.id_compte] }}</td>
-    <td>{{ d.nom }}</td>
-    <td>{{ d.montant }}</td>
-    <td>{{ d.type_depense }}</td>
-    <td>{{ d.categorie_depense }}</td>
-    <td>{{ d.jour }}</td>
-    <td>{{ mois_noms[d.mois] if d.mois else "--" }}</td>
-    <td><a href="/supprimer_depense/{{ d.id_client }}/{{ d.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+    Type :
+    <select name="type_depense">
+      {% for t in type_depense %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+    </select><br>
+
+    Catégorie :
+    <select name="categorie_depense">
+      {% for cat in categorie_depense %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+    </select><br>
+
+    Jour :
+    <select name="jour">
+      {% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}
+    </select><br>
+
+    Mois (si unique) :
+    <select name="mois">
+      <option value="">--</option>
+      {% for num, nom in mois_noms.items() %}
+        <option value="{{ num }}">{{ nom }}</option>
+      {% endfor %}
+    </select><br>
+
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h3>Dépenses enregistrées</h3>
+  <table>
+    <tr>
+      <th>Client</th><th>Compte</th><th>Nom</th><th>Montant</th>
+      <th>Type</th><th>Catégorie</th><th>Jour</th><th>Mois</th><th>Action</th>
+    </tr>
+    {% for d in depenses %}
+    <tr>
+      <td>{{ client_names.get(d.id_client, "?") }}</td>
+      <td>{{ compte_names.get(d.id_compte, "?") }}</td>
+      <td>{{ d.nom }}</td>
+      <td>{{ d.montant }} €</td>
+      <td>{{ d.type_depense }}</td>
+      <td>{{ d.categorie_depense }}</td>
+      <td>{{ d.jour }}</td>
+      <td>{{ mois_noms[d.mois] if d.mois else "--" }}</td>
+      <td><a href="/supprimer_depense/{{ d.id_client }}/{{ d.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Aucune dépense</td></tr>
+    {% endfor %}
+  </table>
 </div>
 <hr>
 
+{# ------------------------------------------------------------------ #}
+{# CRÉDITS                                                             #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter un crédit</h2>
-<form method="POST" action="/credit">
+  <h2>Ajouter un crédit</h2>
+  <form method="POST" action="/credit">
     Compte :
-    <select name="id_compte">{% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}</select><br>
+    <select name="id_compte">
+      {% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}
+    </select><br>
+
     Type :
-    <select name="type_credit">{% for k,v in type_credit.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><br>
-    Capital emprunté : <input type="number" step="0.01" name="capital_emprunte"><br>
-    CRD : <input type="number" step="0.01" name="crd"><br>
-    Taux : <input type="number" step="0.01" name="taux"><br>
-    Durée initiale : <input type="number" name="duree_initiale"><br>
-    Mensualité : <input type="number" step="0.01" name="mensualite"><br>
-    Fin crédit : <input type="date" name="fin_credit"><br>
-    Date début : <input type="text" name="date_debut" placeholder="jj-mm-aaaa"><br>
-    Jour échéance : <input type="number" name="jour_echeance" min="1" max="28" value="1"><br>
+    <select name="type_credit">
+      {% for k, v in type_credit.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+    </select><br>
+
+    Capital emprunté (€) : <input type="number" step="0.01" name="capital_emprunte"><br>
+    Capital restant dû — CRD (€) : <input type="number" step="0.01" name="crd"><br>
+    Taux annuel (%) : <input type="number" step="0.001" name="taux"><br>
+    Durée initiale (mois) : <input type="number" name="duree_initiale"><br>
+    Mensualité (€) : <input type="number" step="0.01" name="mensualite"><br>
+
+    {# ✅ type="date" — cohérent avec le parsing YYYY-MM-DD dans app.py #}
+    Date de fin du crédit : <input type="date" name="fin_credit"><br>
+    Date de début du crédit : <input type="date" name="date_debut"><br>
+    Jour d'échéance : <input type="number" name="jour_echeance" min="1" max="28" value="1"><br>
+
+    {# ✅ Nouveau champ #}
+    <input type="checkbox" name="deja_preleve" id="deja_preleve">
+    <label for="deja_preleve">Mensualité du mois en cours déjà prélevée</label><br>
 
     <h4>Emprunteurs</h4>
     {% for c in clients %}
-        <input type="checkbox" name="emprunteurs" value="{{ c.id }}" onchange="document.getElementById('part_{{c.id}}').disabled = !this.checked;">
-        {{ c.nom }}
-        <input type="number" name="parts" id="part_{{c.id}}" value="100" min="0" max="100" disabled> %
-        <br>
+      <input type="checkbox" name="emprunteurs" value="{{ c.id }}"
+             onchange="document.getElementById('part_{{ c.id }}').disabled = !this.checked;">
+      {{ c.nom }}
+      <input type="number" name="parts" id="part_{{ c.id }}"
+             value="100" min="0" max="100" disabled> %<br>
     {% endfor %}
 
     <button type="submit">Ajouter</button>
-</form>
+  </form>
 
-<h3>Crédits enregistrés</h3>
-<table>
-<tr><th>Client</th><th>Compte</th><th>Type</th><th>Capital</th><th>CRD</th><th>Taux</th><th>Mensualité</th><th>Fin</th><th>Action</th></tr>
-{% for c in credits %}
-<tr>
-    <td>{{ client_names[c.id_client] }}</td>
-    <td>{{ compte_names[c.id_compte] }}</td>
-    <td>{{ c.type_credit }}</td>
-    <td>{{ c.capital_emprunte }}</td>
-    <td>{{ c.crd }}</td>
-    <td>{{ c.taux }}</td>
-    <td>{{ c.mensualite }}</td>
-    <td>{{ c.fin_credit }}</td>
-    <td><a href="/supprimer_credit/{{ c.id_client }}/{{ c.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+  <h3>Crédits enregistrés</h3>
+  <table>
+    <tr>
+      <th>Client</th><th>Compte</th><th>Type</th><th>Capital</th><th>CRD</th>
+      <th>Taux</th><th>Mensualité</th><th>Fin</th><th>Déjà prélevé</th><th>Action</th>
+    </tr>
+    {% for c in credits %}
+    <tr>
+      <td>{{ client_names.get(c.id_client, "?") }}</td>
+      <td>{{ compte_names.get(c.id_compte, "?") }}</td>
+      <td>{{ c.type_credit }}</td>
+      <td>{{ c.capital_emprunte }} €</td>
+      <td>{{ c.crd }} €</td>
+      <td>{{ c.taux }} %</td>
+      <td>{{ c.mensualite }} €</td>
+      <td>{{ c.fin_credit }}</td>
+      <td>{{ "Oui" if c.get("deja_preleve") else "Non" }}</td>
+      <td><a href="/supprimer_credit/{{ c.id_client }}/{{ c.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10">Aucun crédit</td></tr>
+    {% endfor %}
+  </table>
 </div>
 <hr>
 
+{# ------------------------------------------------------------------ #}
+{# ÉPARGNE                                                             #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter une épargne</h2>
-<form method="POST" action="/epargne">
+  <h2>Ajouter une épargne</h2>
+  <form method="POST" action="/epargne">
     Client :
-    <select name="id_client">{% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}</select><br>
+    <select name="id_client">
+      {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
+    </select><br>
+
     Type :
-    <select name="type_epargne">{% for k,v in type_epargne.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><br>
-    Solde : <input type="number" step="0.01" name="solde"><br>
-    Versement mensuel : <input type="number" step="0.01" name="versement_mensuel"><br>
-    Taux : <input type="number" step="0.01" name="taux"><br>
+    <select name="type_epargne">
+      {% for k, v in type_epargne.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
+    </select><br>
+
+    Solde actuel (€) : <input type="number" step="0.01" name="solde" value="0"><br>
+    Versement mensuel (€) : <input type="number" step="0.01" name="versement_mensuel" value="0"><br>
+    Taux annuel (%) : <input type="number" step="0.01" name="taux" value="0"><br>
+
     <button type="submit">Ajouter</button>
-</form>
+  </form>
 
-<h3>Epargnes enregistrées</h3>
-<table>
-<tr><th>Client</th><th>Type</th><th>Solde</th><th>Versement</th><th>Taux</th><th>Action</th></tr>
-{% for e in epargnes %}
-<tr>
-    <td>{{ client_names[e.id_client] }}</td>
-    <td>{{ e.type_epargne }}</td>
-    <td>{{ e.solde }}</td>
-    <td>{{ e.versement }}</td>
-    <td>{{ e.taux }}</td>
-    <td><a href="/supprimer_epargne/{{ e.id_client }}/{{ e.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+  <h3>Épargnes enregistrées</h3>
+  <table>
+    <tr><th>Client</th><th>Type</th><th>Solde</th><th>Versement/mois</th><th>Taux</th><th>Action</th></tr>
+    {% for e in epargnes %}
+    <tr>
+      <td>{{ client_names.get(e.id_client, "?") }}</td>
+      <td>{{ e.type_epargne }}</td>
+      <td>{{ e.solde }} €</td>
+      <td>{{ e.versement }} €</td>
+      <td>{{ e.taux }} %</td>
+      <td><a href="/supprimer_epargne/{{ e.id_client }}/{{ e.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6">Aucune épargne</td></tr>
+    {% endfor %}
+  </table>
 </div>
 <hr>
 
+{# ------------------------------------------------------------------ #}
+{# PATRIMOINE                                                          #}
+{# ------------------------------------------------------------------ #}
 <div class="section">
-<h2>Ajouter un patrimoine</h2>
-<form method="POST" action="/patrimoine">
+  <h2>Ajouter un patrimoine</h2>
+  <form method="POST" action="/patrimoine">
     Client :
-    <select name="id_client">{% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}</select><br>
+    <select name="id_client">
+      {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
+    </select><br>
+
     Type :
-    <select name="type_patrimoine">{% for p in type_patrimoine %}<option value="{{ p }}">{{ p }}</option>{% endfor %}</select><br>
+    <select name="type_patrimoine">
+      {% for p in type_patrimoine %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+    </select><br>
+
     Nom du bien : <input type="text" name="nom" required><br>
-    Valeur : <input type="number" step="0.01" name="valeur" required><br>
-    Part détenue (%) : <input type="number" step="0.01" name="part" value="100"><br>
+    Valeur actuelle (€) : <input type="number" step="0.01" name="valeur" required><br>
+    Part détenue (%) : <input type="number" step="0.01" name="part" value="100" min="0.01" max="100"><br>
+
     Crédit associé :
     <select name="id_credit">
-        <option value="">Aucun</option>
-        {% for c in credits %}<option value="{{ c.id }}">{{ c.type_credit }} - {{ c.capital_emprunte }}</option>{% endfor %}
+      <option value="">Aucun</option>
+      {% for c in credits %}
+        <option value="{{ c.id }}">{{ c.type_credit }} — {{ c.capital_emprunte }} €</option>
+      {% endfor %}
     </select><br>
+
     Revenu associé :
     <select name="id_revenu">
-        <option value="">Aucun</option>
-        {% for r in revenus %}<option value="{{ r.id }}">{{ r.type_revenu }} - {{ r.montant }}</option>{% endfor %}
+      <option value="">Aucun</option>
+      {% for r in revenus %}
+        <option value="{{ r.id }}">{{ r.type_revenu }} — {{ r.montant }} €</option>
+      {% endfor %}
     </select><br>
-    <button type="submit">Ajouter</button>
-</form>
 
-<h3>Patrimoines enregistrés</h3>
-<table>
-<tr><th>Client</th><th>Type</th><th>Nom</th><th>Valeur</th><th>Part</th><th>Crédit</th><th>Revenu</th><th>Action</th></tr>
-{% for p in patrimoines %}
-<tr>
-    <td>{{ client_names[p.id_client] }}</td>
-    <td>{{ p.type_patrimoine }}</td>
-    <td>{{ p.nom }}</td>
-    <td>{{ p.valeur }}</td>
-    <td>{{ p.part }}</td>
-    <td>{{ p.credit if p.credit else "Aucun" }}</td>
-    <td>{{ p.revenu if p.revenu else "Aucun" }}</td>
-    <td><a href="/supprimer_patrimoine/{{ p.id_client }}/{{ p.id }}">Supprimer</a></td>
-</tr>
-{% endfor %}
-</table>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h3>Patrimoines enregistrés</h3>
+  <table>
+    <tr>
+      <th>Client</th><th>Type</th><th>Nom</th><th>Valeur</th>
+      <th>Part</th><th>Valeur détenue</th><th>Crédit</th><th>Revenu</th><th>Action</th>
+    </tr>
+    {% for p in patrimoines %}
+    <tr>
+      <td>{{ client_names.get(p.id_client, "?") }}</td>
+      <td>{{ p.type_patrimoine }}</td>
+      <td>{{ p.nom }}</td>
+      <td>{{ p.valeur }} €</td>
+      <td>{{ p.part }} %</td>
+      <td>{{ (p.valeur * p.part / 100) | round(2) }} €</td>
+      <td>{{ p.credit if p.credit else "—" }}</td>
+      <td>{{ p.revenu if p.revenu else "—" }}</td>
+      <td><a href="/supprimer_patrimoine/{{ p.id_client }}/{{ p.id }}">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Aucun patrimoine</td></tr>
+    {% endfor %}
+  </table>
 </div>
 
 {% endblock %}
