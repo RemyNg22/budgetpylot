@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="section">
+  <h2>Projection de solde - {{ compte.nom_compte }}</h2>
+  <p>
+    Proprietaire(s) : <strong>{{ resultats.proprietaires | join(", ") }}</strong>
+    {% if resultats.est_joint %}<span class="badge">Compte joint</span>{% endif %}
+  </p>
+  <p>Solde actuel : <strong>{{ resultats.solde_actuel | round(2) }} EUR</strong></p>
+  <p>Date du jour : {{ aujourd_hui.strftime("%d/%m/%Y") }}</p>
+</div>
+
+<!-- 3 horizons -->
+<div class="section">
+  <h3>Estimations</h3>
+  <table>
+    <tr><th>Horizon</th><th>Date</th><th>Solde estimé</th><th>Variation</th></tr>
+
+    {% set variation_fdm = resultats.fin_de_mois - resultats.solde_actuel %}
+    <tr>
+      <td>Fin de mois</td>
+      <td>Dernier jour de {{ aujourd_hui.strftime("%B %Y") }}</td>
+      <td><strong>{{ resultats.fin_de_mois | round(2) }} EUR</strong></td>
+      <td class="{{ 'positif' if variation_fdm >= 0 else 'negatif' }}">
+        {{ "+" if variation_fdm >= 0 else "" }}{{ variation_fdm | round(2) }} EUR
+      </td>
+    </tr>
+
+    {% if resultats.prochain_salaire is not none %}
+      {% set variation_sal = resultats.prochain_salaire - resultats.solde_actuel %}
+      <tr>
+        <td>Avant prochain {{ resultats.revenu_principal }}</td>
+        <td>veille du {{ resultats.date_prochain_salaire.strftime("%d/%m/%Y") }}</td>
+        <td><strong>{{ resultats.prochain_salaire | round(2) }} EUR</strong></td>
+        <td class="{{ 'positif' if variation_sal >= 0 else 'negatif' }}">
+          {{ "+" if variation_sal >= 0 else "" }}{{ variation_sal | round(2) }} EUR
+        </td>
+      </tr>
+    {% else %}
+      <tr>
+        <td>Avant prochain salaire</td>
+        <td colspan="3"><em>Aucun revenu principal défini</em></td>
+      </tr>
+    {% endif %}
+
+    {% if resultats.solde_date_libre is not none %}
+      {% set variation_dl = resultats.solde_date_libre - resultats.solde_actuel %}
+      <tr>
+        <td>Date choisie</td>
+        <td>{{ resultats.date_libre.strftime("%d/%m/%Y") }}</td>
+        <td><strong>{{ resultats.solde_date_libre | round(2) }} EUR</strong></td>
+        <td class="{{ 'positif' if variation_dl >= 0 else 'negatif' }}">
+          {{ "+" if variation_dl >= 0 else "" }}{{ variation_dl | round(2) }} EUR
+        </td>
+      </tr>
+    {% endif %}
+  </table>
+</div>
+
+<!-- Formulaire date libre -->
+<div class="section">
+  <h3>Projeter à une date précise</h3>
+  <form method="GET" action="/projection/{{ id_compte }}">
+    <input type="date" name="date_libre" value="{{ date_libre_str }}"
+           min="{{ aujourd_hui.strftime('%Y-%m-%d') }}">
+    <button type="submit">Calculer</button>
+  </form>
+</div>
+
+<!-- Flux à venir par propriétaire -->
+<div class="section">
+  <h3>Flux à venir ce mois-ci</h3>
+
+  {% for client in proprietaires %}
+  <h4>{{ client.nom }}{% if resultats.est_joint %} (co-titulaire){% endif %}</h4>
+
+  <strong>Revenus</strong>
+  <table>
+    <tr><th>Type</th><th>Montant</th><th>Jour</th><th>Principal</th></tr>
+    {% set ns = namespace(found=false) %}
+    {% for r in client.revenus %}
+      {% if r.id_compte == id_compte and r.montant_pour_mois(aujourd_hui.month) > 0 %}
+        {% set ns.found = true %}
+        <tr>
+          <td>{{ r.type_de_revenu }}</td>
+          <td>{{ r.montant | round(2) }} EUR</td>
+          <td>le {{ r.jour }}</td>
+          <td>{{ "Oui" if r.est_revenu_principal else "" }}</td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+    {% if not ns.found %}
+      <tr><td colspan="4"><em>Aucun revenu sur ce compte</em></td></tr>
+    {% endif %}
+  </table>
+
+  <strong>Dépenses</strong>
+  <table>
+    <tr><th>Nom</th><th>Catégorie</th><th>Montant</th><th>Jour</th></tr>
+    {% set ns2 = namespace(found=false) %}
+    {% for d in client.depenses %}
+      {% if d.id_compte == id_compte and d.est_a_appliquer(aujourd_hui.month) %}
+        {% set ns2.found = true %}
+        <tr>
+          <td>{{ d.nom }}</td>
+          <td>{{ d.categorie_depense }}</td>
+          <td>{{ d.montant | round(2) }} EUR</td>
+          <td>le {{ d.jour }}</td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+    {% if not ns2.found %}
+      <tr><td colspan="4"><em>Aucune dépense sur ce compte</em></td></tr>
+    {% endif %}
+  </table>
+
+  <strong>Crédits</strong>
+  <table>
+    <tr><th>Type</th><th>Mensualité (part client)</th><th>Echéance</th><th>Déjà prélevé</th></tr>
+    {% set ns3 = namespace(found=false) %}
+    {% for cr in client.credits %}
+      {% if cr.id_compte == id_compte %}
+        {% set ns3.found = true %}
+        <tr>
+          <td>{{ cr.nom }}</td>
+          <td>{{ cr.mensualite_client(client) | round(2) }} EUR</td>
+          <td>le {{ cr.jour_echeance }}</td>
+          <td>{{ "Oui" if cr.deja_preleve else "Non" }}</td>
+        </tr>
+      {% endif %}
+    {% endfor %}
+    {% if not ns3.found %}
+      <tr><td colspan="4"><em>Aucun crédit sur ce compte</em></td></tr>
+    {% endif %}
+  </table>
+
+  {% endfor %}
+</div>
+
+<!-- Navigation -->
+<div class="section">
+  <a href="/saisie">Retour à la saisie</a>
+  {% for client in proprietaires %}
+    &nbsp;|&nbsp;
+    <a href="/stats/{{ loop.index0 }}">Stats {{ client.nom }}</a>
+  {% endfor %}
+</div>
+
+{% endblock %}

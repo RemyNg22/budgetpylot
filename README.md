@@ -53,6 +53,7 @@ finance_app/
 ├── templates/                # HTML
 │   ├── base.html
 │   ├── saisie_budget.html
+│   ├── projection.html
 │   └── stats.html
 |
 ├── static/                   # visuel
