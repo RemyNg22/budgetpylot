@@ -1,7 +1,17 @@
+todolist:
+enlever la possibilité de mettre un mois si revenus mensuel, dépense mensuel
+
+enlever la possibilité d'avoir plus de 100% au cumul sur un crédit (par ex, interdit de mettre 100% sur une tête et 100% sur l'autre)
+
+pouvoir mettre un versement ponctuel sur une épargne et mettre le jour et le mois
+
+
+
 fonction à créer pour calcul
 
 Revenus totaux du mois
 Dépenses totales du mois (fixes / variables / uniques)
+Dépenses par segmentation
 Solde mensuel (revenus - dépenses - mensualités crédit)
 Taux d'épargne (épargne / revenus)
 Reste à vivre

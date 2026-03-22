@@ -2,6 +2,22 @@
 
 {% block content %}
 
+<!-- Import CSV -->
+<div class="section">
+  <h3>Importer une sauvegarde</h3>
+  <form method="POST" action="/import_csv" enctype="multipart/form-data">
+    <input type="file" name="fichier_csv" accept=".csv" required>
+    <button type="submit">Charger</button>
+  </form>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for msg in messages %}
+        <p class="flash">{{ msg }}</p>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+
 <!-- Clients -->
 <div class="section">
   <h2>Ajouter un client</h2>
@@ -355,6 +371,12 @@
     <tr><td colspan="9">Aucun patrimoine</td></tr>
     {% endfor %}
   </table>
+</div>
+
+<!-- Export CSV -->
+<div class="section">
+  <h3>Exporter la sauvegarde</h3>
+  <a href="/export_csv"><button type="button">Télécharger le CSV</button></a>
 </div>
 
 {% endblock %}

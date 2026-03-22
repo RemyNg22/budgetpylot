@@ -14,6 +14,7 @@ class Depense:
         "Forfait mobile",
         "Abonnement numérique",
         "Impôts et taxes",
+        "Virement d'épargne",
         "Alimentation",
         "Transport",
         "Habillement",

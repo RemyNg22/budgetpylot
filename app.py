@@ -9,6 +9,7 @@ from models.depense import Depense
 from models.credit import Credit
 from models.epargne import Epargne
 from models.patrimoine import Patrimoine
+from data.csv_manager import exporter_csv, importer_csv
 
 app = Flask(__name__)
 app.secret_key = "secret"
@@ -553,7 +554,48 @@ def projection(id_compte):
         date_libre_str=date_libre_str or "",
     )
 
-
+# Export / Import CSV
+ 
+@app.route("/export_csv")
+def export_csv():
+    from flask import Response
+    contenu = exporter_csv(clients, comptes)
+    nom_fichier = f"budgetpylot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        contenu,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={nom_fichier}"}
+    )
+ 
+ 
+@app.route("/import_csv", methods=["POST"])
+def import_csv():
+    global next_client_id, next_compte_id, next_item_id
+ 
+    fichier = request.files.get("fichier_csv")
+    if not fichier or fichier.filename == "":
+        return safe_redirect("Aucun fichier sélectionné")
+ 
+    try:
+        contenu = fichier.read().decode("utf-8")
+    except Exception as e:
+        return safe_redirect(f"Erreur lecture fichier : {e}")
+ 
+    ref_client = [next_client_id]
+    ref_compte = [next_compte_id]
+    ref_item = [next_item_id]
+ 
+    try:
+        importer_csv(contenu, clients, comptes, ref_client, ref_compte, ref_item)
+    except Exception as e:
+        return safe_redirect(f"Erreur import CSV : {e}")
+ 
+    next_client_id = ref_client[0]
+    next_compte_id = ref_compte[0]
+    next_item_id = ref_item[0]
+ 
+    flash("Données importées avec succès")
+    return redirect("/saisie")
 
 if __name__ == "__main__":
     app.run(debug=True)
