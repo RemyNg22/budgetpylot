@@ -1,3 +1,20 @@
+class VersementPonctuel:
+ 
+    def __init__(self, montant: float, jour: int, mois: int):
+        if montant <= 0:
+            raise ValueError("Le montant doit être positif")
+        if not (1 <= jour <= 28):
+            raise ValueError("Le jour doit être compris entre 1 et 28")
+        if not (1 <= mois <= 12):
+            raise ValueError("Le mois doit être compris entre 1 et 12")
+        self.montant = float(montant)
+        self.jour = jour
+        self.mois = mois
+ 
+    def __repr__(self):
+        return f"Versement ponctuel : {self.montant:.2f} EUR le {self.jour}/{self.mois}"
+
+
 class Epargne:
 
     TYPE_EPARGNE={
@@ -55,9 +72,21 @@ class Epargne:
         self.plafond_min = produit["plafond_min"]
         self.plafond_max = produit["plafond_max"]
         self.taux = float(taux)
+        self.versements_ponctuels: list[VersementPonctuel] = []
 
         if self.plafond_min is not None and self.solde < self.plafond_min:
             raise ValueError("Solde inférieur au minimum requis")
-        
+
+    def ajouter_versement_ponctuel(self, montant: float, jour: int, mois: int):
+        vp = VersementPonctuel(montant, jour, mois)
+        self.versements_ponctuels.append(vp)
+        return vp
+ 
+    def versements_ponctuels_du_mois(self, mois: int) -> float:
+        return sum(v.montant for v in self.versements_ponctuels if v.mois == mois)
+ 
+    def total_versements_mois(self, mois: int) -> float:
+        return self.versements_permanents + self.versements_ponctuels_du_mois(mois)
+
     def __repr__(self):
         return f"{self.nom} - Solde: {self.solde} € - Taux: {self.taux}%"

@@ -13,6 +13,7 @@ from data.csv_manager import exporter_csv, importer_csv
 
 app = Flask(__name__)
 app.secret_key = "secret"
+app.jinja_env.globals.update(enumerate=enumerate)
 
 # Stockage en mémoire pour export CSV futur
 clients = {}
@@ -44,7 +45,6 @@ def parse_int(value, default=None):
         return default
 
 
-
 def parse_float(value, default=None):
     try:
         if value in (None, ""):
@@ -70,7 +70,6 @@ def next_id() -> int:
     global next_item_id
     next_item_id += 1
     return next_item_id
-
 
 
 # DataFrames
@@ -150,6 +149,11 @@ def generate_df():
                 "solde": e.solde,
                 "versement": e.versements_permanents,
                 "taux": e.taux,
+                "nb_versements_ponctuels": len(e.versements_ponctuels),
+                "versements_ponctuels": [
+                    {"montant": vp.montant, "jour": vp.jour, "mois": vp.mois, "index": i}
+                    for i, vp in enumerate(e.versements_ponctuels)
+                ],
                 "id_client": cid,
             })
 
@@ -174,8 +178,6 @@ def generate_df():
         "epargnes": pd.DataFrame(df_epargnes),
         "patrimoines": pd.DataFrame(df_patrimoines),
     }
-
-
 
 
 # Routes
@@ -212,9 +214,6 @@ def saisie():
         client_names=client_names,
         compte_names=compte_names,
     )
-
-
-
 
 # Client
 
@@ -459,6 +458,44 @@ def supprimer_epargne(id_client, item_id):
     return redirect("/saisie")
 
 
+@app.route("/epargne_versement_ponctuel/<int:id_client>/<int:epargne_id>", methods=["POST"])
+def ajouter_versement_ponctuel(id_client, epargne_id):
+    client = clients.get(id_client)
+    if not client:
+        return safe_redirect("Client introuvable")
+
+    epargne = next((e for e in client.epargnes if e.item_id == epargne_id), None)
+    if not epargne:
+        return safe_redirect("Epargne introuvable")
+
+    montant = parse_float(request.form.get("vp_montant"))
+    jour = parse_int(request.form.get("vp_jour"))
+    mois = parse_int(request.form.get("vp_mois"))
+
+    if not montant or not jour or not mois:
+        return safe_redirect("Versement ponctuel : tous les champs sont obligatoires")
+
+    try:
+        epargne.ajouter_versement_ponctuel(montant, jour, mois)
+    except ValueError as e:
+        return safe_redirect(f"Erreur versement ponctuel : {e}")
+
+    return redirect("/saisie")
+
+
+@app.route("/supprimer_versement_ponctuel/<int:id_client>/<int:epargne_id>/<int:vp_index>")
+def supprimer_versement_ponctuel(id_client, epargne_id, vp_index):
+    client = clients.get(id_client)
+    if not client:
+        return safe_redirect("Client introuvable")
+    epargne = next((e for e in client.epargnes if e.item_id == epargne_id), None)
+    if not epargne:
+        return safe_redirect("Epargne introuvable")
+    if 0 <= vp_index < len(epargne.versements_ponctuels):
+        epargne.versements_ponctuels.pop(vp_index)
+    return redirect("/saisie")
+
+
 # Patrimoine
 
 @app.route("/patrimoine", methods=["POST"])
@@ -521,7 +558,6 @@ def debug():
 
 
 # Projection
-
 @app.route("/projection/<int:id_compte>", methods=["GET"])
 def projection(id_compte):
     compte = comptes.get(id_compte)
@@ -555,7 +591,6 @@ def projection(id_compte):
     )
 
 # Export / Import CSV
- 
 @app.route("/export_csv")
 def export_csv():
     from flask import Response
@@ -566,36 +601,37 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename={nom_fichier}"}
     )
- 
- 
+
+
 @app.route("/import_csv", methods=["POST"])
 def import_csv():
     global next_client_id, next_compte_id, next_item_id
- 
+
     fichier = request.files.get("fichier_csv")
     if not fichier or fichier.filename == "":
         return safe_redirect("Aucun fichier sélectionné")
- 
+
     try:
         contenu = fichier.read().decode("utf-8")
     except Exception as e:
         return safe_redirect(f"Erreur lecture fichier : {e}")
- 
+
     ref_client = [next_client_id]
     ref_compte = [next_compte_id]
     ref_item = [next_item_id]
- 
+
     try:
         importer_csv(contenu, clients, comptes, ref_client, ref_compte, ref_item)
     except Exception as e:
         return safe_redirect(f"Erreur import CSV : {e}")
- 
+
     next_client_id = ref_client[0]
     next_compte_id = ref_compte[0]
     next_item_id = ref_item[0]
- 
+
     flash("Données importées avec succès")
     return redirect("/saisie")
+
 
 if __name__ == "__main__":
     app.run(debug=True)

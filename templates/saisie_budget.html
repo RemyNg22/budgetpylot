@@ -2,6 +2,65 @@
 
 {% block content %}
 
+<script>
+// Blocage champ mois selon periodicite (revenus)
+function majChampsMoisRevenu(select) {
+    var periodicite = select.value;
+    var champMois = document.getElementById("revenu_mois");
+    if (periodicite === "mensuelle") {
+        champMois.value = "";
+        champMois.disabled = true;
+    } else {
+        champMois.disabled = false;
+    }
+}
+
+// Blocage champ mois selon type_depense
+function majChampsMoisDepense(select) {
+    var type = select.value;
+    var champMois = document.getElementById("depense_mois");
+    if (type === "fixe" || type === "variable_mensuelle") {
+        champMois.value = "";
+        champMois.disabled = true;
+    } else {
+        champMois.disabled = false;
+    }
+}
+
+// Validation parts crédit : somme max 100%
+function validerPartCredit() {
+    var cases = document.querySelectorAll("input[name='emprunteurs']:checked");
+    var total = 0;
+    cases.forEach(function(cb) {
+        var id = cb.value;
+        var champPart = document.getElementById("part_" + id);
+        if (champPart) {
+            total += parseFloat(champPart.value) || 0;
+        }
+    });
+    var erreur = document.getElementById("erreur_parts");
+    if (total > 100) {
+        erreur.textContent = "La somme des parts dépasse 100% (" + total + "%)";
+        erreur.style.display = "block";
+        return false;
+    }
+    erreur.style.display = "none";
+    return true;
+}
+
+function onChangeEmprunteur(checkbox) {
+    var id = checkbox.value;
+    var champPart = document.getElementById("part_" + id);
+    champPart.disabled = !checkbox.checked;
+    if (!checkbox.checked) {
+        champPart.value = 0;
+    } else {
+        champPart.value = 100;
+    }
+    validerPartCredit();
+}
+</script>
+
 <!-- Import CSV -->
 <div class="section">
   <h3>Importer une sauvegarde</h3>
@@ -94,7 +153,7 @@
     Montant : <input type="number" step="0.01" name="montant" required><br>
 
     Périodicité :
-    <select name="periodicite">
+    <select name="periodicite" onchange="majChampsMoisRevenu(this)">
       <option value="mensuelle">Mensuelle</option>
       <option value="annuelle">Annuelle</option>
       <option value="unique">Unique</option>
@@ -106,7 +165,7 @@
     </select><br>
 
     Mois (si annuel/unique) :
-    <select name="mois">
+    <select name="mois" id="revenu_mois" disabled>
       <option value="">--</option>
       {% for num, nom in mois_noms.items() %}
         <option value="{{ num }}">{{ nom }}</option>
@@ -161,7 +220,7 @@
     Montant : <input type="number" step="0.01" name="montant" required><br>
 
     Type :
-    <select name="type_depense">
+    <select name="type_depense" onchange="majChampsMoisDepense(this)">
       {% for t in type_depense %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
     </select><br>
 
@@ -176,7 +235,7 @@
     </select><br>
 
     Mois (si unique) :
-    <select name="mois">
+    <select name="mois" id="depense_mois" disabled>
       <option value="">--</option>
       {% for num, nom in mois_noms.items() %}
         <option value="{{ num }}">{{ nom }}</option>
@@ -213,7 +272,7 @@
 <!-- Crédits -->
 <div class="section">
   <h2>Ajouter un crédit</h2>
-  <form method="POST" action="/credit">
+  <form method="POST" action="/credit" onsubmit="return validerPartCredit()">
     Compte :
     <select name="id_compte">
       {% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}
@@ -237,12 +296,14 @@
     <label for="deja_preleve">Mensualité du mois en cours déjà prélevée</label><br>
 
     <h4>Emprunteurs</h4>
+    <p id="erreur_parts" style="color:red; display:none;"></p>
     {% for c in clients %}
       <input type="checkbox" name="emprunteurs" value="{{ c.id }}"
-             onchange="document.getElementById('part_{{ c.id }}').disabled = !this.checked;">
+             onchange="onChangeEmprunteur(this)">
       {{ c.nom }}
       <input type="number" name="parts" id="part_{{ c.id }}"
-             value="100" min="0" max="100" disabled> %<br>
+             value="0" min="0" max="100" step="0.1" disabled
+             oninput="validerPartCredit()"> %<br>
     {% endfor %}
 
     <button type="submit">Ajouter</button>
@@ -288,16 +349,18 @@
     </select><br>
 
     Solde actuel (EUR) : <input type="number" step="0.01" name="solde" value="0"><br>
-    Versement mensuel (EUR) : <input type="number" step="0.01" name="versement_mensuel" value="0"><br>
+    Versement mensuel permanent (EUR) : <input type="number" step="0.01" name="versement_mensuel" value="0"><br>
     Taux annuel (%) : <input type="number" step="0.01" name="taux" value="0"><br>
 
     <button type="submit">Ajouter</button>
   </form>
 
   <h3>Epargnes enregistrées</h3>
+  {% for e in epargnes %}
   <table>
-    <tr><th>Client</th><th>Type</th><th>Solde</th><th>Versement/mois</th><th>Taux</th><th>Action</th></tr>
-    {% for e in epargnes %}
+    <tr>
+      <th>Client</th><th>Type</th><th>Solde</th><th>Versement/mois</th><th>Taux</th><th>Action</th>
+    </tr>
     <tr>
       <td>{{ client_names.get(e.id_client, "?") }}</td>
       <td>{{ e.type_epargne }}</td>
@@ -306,10 +369,45 @@
       <td>{{ e.taux }} %</td>
       <td><a href="/supprimer_epargne/{{ e.id_client }}/{{ e.id }}">Supprimer</a></td>
     </tr>
-    {% else %}
-    <tr><td colspan="6">Aucune épargne</td></tr>
-    {% endfor %}
   </table>
+
+  <!-- Versements ponctuels de cette épargne -->
+  <details>
+    <summary>Versements ponctuels ({{ e.nb_versements_ponctuels }})</summary>
+
+    <form method="POST" action="/epargne_versement_ponctuel/{{ e.id_client }}/{{ e.id }}">
+      Montant (EUR) : <input type="number" step="0.01" name="vp_montant" required>
+      Jour :
+      <select name="vp_jour">
+        {% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}
+      </select>
+      Mois :
+      <select name="vp_mois">
+        {% for num, nom in mois_noms.items() %}<option value="{{ num }}">{{ nom }}</option>{% endfor %}
+      </select>
+      <button type="submit">Ajouter versement</button>
+    </form>
+
+    {% if e.versements_ponctuels %}
+    <table>
+      <tr><th>Montant</th><th>Jour</th><th>Mois</th><th>Action</th></tr>
+      {% for vp in e.versements_ponctuels %}
+      <tr>
+        <td>{{ vp.montant }} EUR</td>
+        <td>{{ vp.jour }}</td>
+        <td>{{ mois_noms[vp.mois] }}</td>
+        <td><a href="/supprimer_versement_ponctuel/{{ e.id_client }}/{{ e.id }}/{{ vp.index }}">Supprimer</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p><em>Aucun versement ponctuel</em></p>
+    {% endif %}
+  </details>
+
+  {% else %}
+  <p>Aucune épargne</p>
+  {% endfor %}
 </div>
 
 <!-- Patrimoine -->

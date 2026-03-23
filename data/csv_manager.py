@@ -138,6 +138,20 @@ def exporter_csv(clients: dict, comptes: dict) -> str:
                 "", "", "", "", ""
             ])
 
+    # Versements ponctuels épargne
+    for client_id, client in clients.items():
+        for e in client.epargnes:
+            for i, vp in enumerate(e.versements_ponctuels):
+                writer.writerow([
+                    "versement_ponctuel",
+                    e.item_id,
+                    client_id,
+                    vp.montant,
+                    vp.jour,
+                    vp.mois,
+                    "", "", "", "", "", ""
+                ])
+
     # Patrimoines
     for client_id, client in clients.items():
         for p in client.patrimoines:
@@ -360,6 +374,26 @@ def importer_csv(
         clients[client_id].ajouter_epargne(e)
         if item_id >= next_item_id:
             next_item_id = item_id + 1
+
+    # Passe 7bis : versements ponctuels épargne
+
+    for row in rows:
+        if not row or row[0] != "versement_ponctuel":
+            continue
+        epargne_id = int(row[1])
+        client_id = int(row[2])
+        montant = float(row[3])
+        jour = int(row[4])
+        mois = int(row[5])
+
+        if client_id not in clients:
+            continue
+
+        epargne = next(
+            (e for e in clients[client_id].epargnes if e.item_id == epargne_id), None
+        )
+        if epargne:
+            epargne.ajouter_versement_ponctuel(montant, jour, mois)
 
     # Passe 8 : patrimoines
     for row in rows:
