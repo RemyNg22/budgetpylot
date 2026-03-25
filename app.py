@@ -9,6 +9,7 @@ from models.depense import Depense
 from models.credit import Credit
 from models.epargne import Epargne
 from models.patrimoine import Patrimoine
+from services.statistiques import synthese_complete, stats_foyer
 from data.csv_manager import exporter_csv, importer_csv
 
 app = Flask(__name__)
@@ -181,7 +182,6 @@ def generate_df():
 
 
 # Routes
-
 @app.route("/")
 def index():
     return redirect("/saisie")
@@ -213,6 +213,8 @@ def saisie():
         mois_noms=MOIS_NOMS,
         client_names=client_names,
         compte_names=compte_names,
+        mois_actuel=datetime.now().month,
+        annee_actuelle=datetime.now().year,
     )
 
 # Client
@@ -588,6 +590,55 @@ def projection(id_compte):
         resultats=resultats,
         aujourd_hui=aujourd_hui,
         date_libre_str=date_libre_str or "",
+    )
+
+
+# Statistiques
+
+@app.route("/stats")
+def stats():
+    ids = request.args.getlist("clients")
+    if not ids:
+        return safe_redirect("Aucun client sélectionné")
+
+    liste_clients = [clients[parse_int(i)] for i in ids if parse_int(i) in clients]
+    if not liste_clients:
+        return safe_redirect("Clients introuvables")
+
+    mois = parse_int(request.args.get("mois"), datetime.now().month)
+    annee = parse_int(request.args.get("annee"), datetime.now().year)
+    nb_mois_libre = parse_int(request.args.get("nb_mois_epargne"), None)
+
+    synthese = synthese_complete(liste_clients, comptes, mois, annee, nb_mois_libre)
+
+    return render_template(
+        "stats.html",
+        liste_clients=liste_clients,
+        tous_clients=clients,
+        ids_selectionnes=[parse_int(i) for i in ids],
+        synthese=synthese,
+        mois=mois,
+        annee=annee,
+        mois_noms=MOIS_NOMS,
+        nb_mois_epargne=nb_mois_libre or 12,
+    )
+
+
+@app.route("/stats/foyer")
+def stats_foyer_route():
+    ids = request.args.getlist("clients")
+    liste_clients = [clients[parse_int(i)] for i in ids if parse_int(i) in clients]
+
+    if not liste_clients:
+        return safe_redirect("Aucun client sélectionné pour le foyer")
+
+    foyer = stats_foyer(liste_clients)
+
+    return render_template(
+        "stats_foyer.html",
+        foyer=foyer,
+        tous_clients=clients,
+        ids_selectionnes=[parse_int(i) for i in ids],
     )
 
 # Export / Import CSV

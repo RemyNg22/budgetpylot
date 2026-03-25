@@ -1,15 +1,9 @@
-todolist:
-enlever la possibilité de mettre un mois si revenus mensuel, dépense mensuel
-
-enlever la possibilité d'avoir plus de 100% au cumul sur un crédit (par ex, interdit de mettre 100% sur une tête et 100% sur l'autre)
-
-pouvoir mettre un versement ponctuel sur une épargne et mettre le jour et le mois
-
-
-
 fonction à créer pour calcul
+Pour chaque personne selectionnée:
 
 Revenus totaux du mois
+Revenu mensuel moyen
+Revenu annuel
 Dépenses totales du mois (fixes / variables / uniques)
 Dépenses par segmentation
 Solde mensuel (revenus - dépenses - mensualités crédit)
@@ -25,14 +19,15 @@ Solde estimé à date libre
 
 
 Taux d'endettement global (mensualités / revenus) — seuil 35% réglementaire
+Capacité d'emprunt sur 25 ans
+Capacité d'emprunt sur 20 ans
 CRD total tous crédits confondus
 Coût total restant (intérêts)
 Durée restante par crédit
-Répartition des mensualités par type de crédit
 
 
 Encours total épargne
-Projection épargne à 1 an / 3 ans / 5 ans / 10 ans avec intérêts composés
+Projection épargne à 1 an et durée libre
 Capacité d'épargne mensuelle (reste à vivre - dépenses variables)
 Répartition par type de produit (livrets / AV / PEA…)
 
@@ -44,7 +39,10 @@ Rendement locatif brut (loyer annuel / valeur bien)
 Effort d'épargne immobilier (mensualité - loyer perçu)
 
 
-Revenus du foyer (somme des clients liés)
-Dépenses communes vs dépenses individuelles
-Taux d'endettement du foyer
+Pour foyer uniquement:
 Contribution de chaque co-emprunteur aux crédits
+
+PONDERER REVENUS POUR TAUX D ENDETTEMENT!!!
+POUR TAUX D ENDETTEMENT, inclure uniquement loyer, impot et crédit en cours
+pour CAPACITE D EMPRUNT, inclure uniquement les impots et credit en cours sur une ligne
+et lautre ligne inclure le loyer qui reste (pour du locatif par ex)

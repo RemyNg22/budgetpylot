@@ -477,4 +477,26 @@ function onChangeEmprunteur(checkbox) {
   <a href="/export_csv"><button type="button">Télécharger le CSV</button></a>
 </div>
 
+<!-- Navigation vers les statistiques -->
+<div class="section">
+  <h3>Voir les statistiques</h3>
+  <form method="GET" action="/stats">
+    Sélectionner le(s) client(s) :
+    {% for c in clients %}
+      <input type="checkbox" name="clients" value="{{ c.id }}" id="stat_client_{{ c.id }}">
+      <label for="stat_client_{{ c.id }}">{{ c.nom }}</label>
+    {% endfor %}
+    <br>
+    Mois :
+    <select name="mois">
+      {% for num, nom in mois_noms.items() %}
+        <option value="{{ num }}" {% if num == mois_actuel %}selected{% endif %}>{{ nom }}</option>
+      {% endfor %}
+    </select>
+    Année : <input type="number" name="annee" value="{{ annee_actuelle }}" min="2000" max="2100" style="width:80px">
+    <br>
+    <button type="submit">Afficher les statistiques</button>
+  </form>
+</div>
+
 {% endblock %}

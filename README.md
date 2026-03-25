@@ -43,7 +43,7 @@ finance_app/
 ├── services/                 # calculs métier
 │   ├── calcul_budget.py
 │   ├── calcul_credit.py
-│   ├── projection.py
+│   ├── taux_manager.py
 │   └── statistiques.py
 
 ├── data/                     # sauvegarde des données
