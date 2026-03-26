@@ -165,7 +165,7 @@ def generate_df():
                 "nom": p.nom,
                 "valeur": p.valeur,
                 "part": p.part,
-                "credit": p.credit.nom if p.credit else None,
+                "credits": [{"id": cr.item_id, "nom": cr.nom} for cr in p.credits],
                 "revenu": p.revenu.type_de_revenu if p.revenu else None,
                 "id_client": cid,
             })
@@ -358,40 +358,38 @@ def supprimer_depense(id_client, item_id):
 def ajouter_credit():
     compte_id = parse_int(request.form.get("id_compte"))
     type_credit = parse_int(request.form.get("type_credit"))
+    mensualite = parse_float(request.form.get("mensualite"))
+    jour_echeance = parse_int(request.form.get("jour_echeance"), 1)
+    emprunteurs_ids = request.form.getlist("emprunteurs")
+    parts_str = request.form.getlist("parts")
+
+    # Obligatoires
+    if mensualite is None or mensualite <= 0:
+        return safe_redirect("La mensualité est obligatoire et doit être positive")
+    if not jour_echeance or not (1 <= jour_echeance <= 28):
+        return safe_redirect("Le jour d'échéance est obligatoire (entre 1 et 28)")
+    if compte_id not in comptes:
+        return safe_redirect("Compte invalide")
+
+    # Facultatifs
     capital_emprunte = parse_float(request.form.get("capital_emprunte"))
     crd = parse_float(request.form.get("crd"))
     taux = parse_float(request.form.get("taux"))
     duree_initiale = parse_int(request.form.get("duree_initiale"))
-    mensualite = parse_float(request.form.get("mensualite"))
-    fin_credit_str = request.form.get("fin_credit")
-    jour_echeance = parse_int(request.form.get("jour_echeance"), 1)
-    date_debut_str = request.form.get("date_debut")
-    emprunteurs_ids = request.form.getlist("emprunteurs")
-    parts_str = request.form.getlist("parts")
-
-    if not date_debut_str:
-        return safe_redirect("La date de début du crédit est obligatoire")
-
-    try:
-        date_debut = datetime.strptime(date_debut_str, "%Y-%m-%d")
-    except ValueError:
-        return safe_redirect("Format date de début invalide")
-
-    if compte_id not in comptes:
-        return safe_redirect("Compte invalide")
+    fin_credit_str = request.form.get("fin_credit") or None
 
     compte = comptes[compte_id]
 
     try:
         cr = Credit(
             type_de_credit=type_credit,
+            mensualite=mensualite,
+            jour_echeance=jour_echeance,
             capital_emprunte=capital_emprunte,
             crd=crd,
             taux=taux,
             duree_initiale=duree_initiale,
-            mensualite=mensualite,
             fin_credit=fin_credit_str,
-            jour_echeance=jour_echeance,
             compte=compte,
             id_compte=compte_id,
             deja_preleve=request.form.get("deja_preleve") == "on",
@@ -504,7 +502,7 @@ def supprimer_versement_ponctuel(id_client, epargne_id, vp_index):
 def ajouter_patrimoine():
     client_id = parse_int(request.form.get("id_client"))
     revenu_id = parse_int(request.form.get("id_revenu"))
-    credit_id = parse_int(request.form.get("id_credit"))
+    credit_ids = request.form.getlist("id_credits")
     type_patrimoine = parse_str(request.form.get("type_patrimoine"))
     nom = parse_str(request.form.get("nom"))
     valeur = parse_float(request.form.get("valeur"))
@@ -519,9 +517,22 @@ def ajouter_patrimoine():
         (r for r in client.revenus if r.item_id == revenu_id), None
     ) if revenu_id else None
 
-    credit_associe = next(
-        (c for c in client.credits if c.item_id == credit_id), None
-    ) if credit_id else None
+
+    tous_credits = []
+    seen = set()
+    for c in clients.values():
+        for cr in c.credits:
+            if id(cr) not in seen:
+                seen.add(id(cr))
+                tous_credits.append(cr)
+
+    credits_associes = []
+    for cid_str in credit_ids:
+        cid = parse_int(cid_str)
+        if cid is not None:
+            cr = next((c for c in tous_credits if c.item_id == cid), None)
+            if cr:
+                credits_associes.append(cr)
 
     try:
         patrimoine = Patrimoine(
@@ -530,8 +541,7 @@ def ajouter_patrimoine():
             valeur=valeur,
             part=part,
             revenu=revenu_associe,
-            credit=credit_associe,
-        )
+            credits=credits_associes,)
     except ValueError as e:
         return safe_redirect(f"Erreur patrimoine : {e}")
 

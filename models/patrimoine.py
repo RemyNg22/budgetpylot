@@ -15,7 +15,7 @@ class Patrimoine:
     )
 
     def __init__(self, type_patrimoine: str, nom: str, valeur: float, part: float = 100, 
-                 credit: Credit | None = None, revenu: Revenu | None = None):
+                 credits: list | None = None, revenu=None):
 
         if type_patrimoine not in self.TYPE_PATRIMOINE:
             raise ValueError("Type de patrimoine invalide")
@@ -31,7 +31,7 @@ class Patrimoine:
         self.valeur = float(valeur)
         self.part = float(part)
         self.revenu = revenu
-        self.credit = credit
+        self.credits: list = credits if credits is not None else []
 
     @property
     def valeur_detention(self) -> float:
@@ -43,19 +43,25 @@ class Patrimoine:
             raise ValueError("La valeur doit être positive")
         self.valeur = float(nouvelle_valeur)
 
-    def ajouter_credit(self, credit: Credit):
-        self.credit = credit
-
+    def ajouter_credit(self, credit):
+        if credit not in self.credits:
+            self.credits.append(credit)
+ 
+    def retirer_credit(self, credit):
+        self.credits = [cr for cr in self.credits if cr is not credit]
 
     def ajouter_revenu(self, revenu: Revenu):
         self.revenu = revenu
 
-    def __repr__(self):
-        credit_nom = self.credit.nom if self.credit else "Aucun crédit"
-        revenu_nom = self.revenu.type_de_revenu if self.revenu else "Aucun revenu"
+    @property
+    def credit(self):
+        """Retourne le premier crédit associé, ou None. Pour compatibilité."""
+        return self.credits[0] if self.credits else None
  
+    def __repr__(self):
+        noms_credits = ", ".join(cr.nom for cr in self.credits) or "Aucun crédit"
+        revenu_nom = self.revenu.type_de_revenu if self.revenu else "Aucun revenu"
         return (
             f"{self.type_patrimoine} - {self.nom} : "
-            f"{self.valeur} € ({self.part}% détenu) | "
-            f"Crédit : {credit_nom} | Revenu : {revenu_nom}"
-        )
+            f"{self.valeur} EUR ({self.part}% détenu) | "
+            f"Crédits : {noms_credits} | Revenu : {revenu_nom}")

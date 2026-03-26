@@ -42,7 +42,3 @@ Effort d'épargne immobilier (mensualité - loyer perçu)
 Pour foyer uniquement:
 Contribution de chaque co-emprunteur aux crédits
 
-PONDERER REVENUS POUR TAUX D ENDETTEMENT!!!
-POUR TAUX D ENDETTEMENT, inclure uniquement loyer, impot et crédit en cours
-pour CAPACITE D EMPRUNT, inclure uniquement les impots et credit en cours sur une ligne
-et lautre ligne inclure le loyer qui reste (pour du locatif par ex)

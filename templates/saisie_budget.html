@@ -146,11 +146,11 @@ function onChangeEmprunteur(checkbox) {
     </select><br>
 
     Type :
-    <select name="type_revenu">
+    <select name="type_revenu" id="type_revenu_select" onchange="verifierRevenuIndivision()">
       {% for r in type_revenu %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
     </select><br>
 
-    Montant : <input type="number" step="0.01" name="montant" required><br>
+    Montant : <input type="number" step="0.01" name="montant" id="montant_revenu" required><br>
 
     Périodicité :
     <select name="periodicite" onchange="majChampsMoisRevenu(this)">
@@ -177,6 +177,29 @@ function onChangeEmprunteur(checkbox) {
 
     <button type="submit">Ajouter</button>
   </form>
+
+  <!-- Trigger warning indivision -->
+  <div id="warning_indivision" style="display:none; background:#fff3cd; border:1px solid #ffc107; padding:10px; margin-top:10px;">
+    <strong>Attention — Revenu en indivision possible</strong><br>
+    Ce type de revenu est souvent partagé entre plusieurs bénéficiaires (indivision, SCI, co-propriété).<br>
+    Si ce revenu appartient à plusieurs personnes, pensez à saisir <strong>la part de chaque bénéficiaire séparément</strong>
+    plutôt que le montant total. Exemple : loyer de 1 000 EUR partagé à 50/50 → saisir 500 EUR pour chaque client.
+  </div>
+
+  <script>
+    var REVENUS_INDIVISION = ["loyer", "revenu SCPI"];
+    function verifierRevenuIndivision() {
+      var type = document.getElementById("type_revenu_select").value;
+      var warning = document.getElementById("warning_indivision");
+      if (REVENUS_INDIVISION.indexOf(type) !== -1) {
+        warning.style.display = "block";
+      } else {
+        warning.style.display = "none";
+      }
+    }
+    // Vérification au chargement si un type est déjà sélectionné
+    verifierRevenuIndivision();
+  </script>
 
   <h3>Revenus enregistrés</h3>
   <table>
@@ -283,19 +306,22 @@ function onChangeEmprunteur(checkbox) {
       {% for k, v in type_credit.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}
     </select><br>
 
-    Capital emprunté (EUR) : <input type="number" step="0.01" name="capital_emprunte"><br>
-    Capital restant dû - CRD (EUR) : <input type="number" step="0.01" name="crd"><br>
-    Taux annuel (%) : <input type="number" step="0.001" name="taux"><br>
-    Durée initiale (mois) : <input type="number" name="duree_initiale"><br>
-    Mensualité (EUR) : <input type="number" step="0.01" name="mensualite"><br>
-    Date de fin du crédit : <input type="date" name="fin_credit"><br>
-    Date de début du crédit : <input type="date" name="date_debut"><br>
-    Jour d'échéance : <input type="number" name="jour_echeance" min="1" max="28" value="1"><br>
+    Mensualité (EUR) * : <input type="number" step="0.01" name="mensualite" required><br>
+    Jour d'échéance * : <input type="number" name="jour_echeance" min="1" max="28" value="1" required><br>
 
     <input type="checkbox" name="deja_preleve" id="deja_preleve">
     <label for="deja_preleve">Mensualité du mois en cours déjà prélevée</label><br>
 
-    <h4>Emprunteurs</h4>
+    <details>
+      <summary>Informations complémentaires (facultatif — utile pour les stats détaillées)</summary>
+      Capital emprunté (EUR) : <input type="number" step="0.01" name="capital_emprunte"><br>
+      Capital restant dû - CRD (EUR) : <input type="number" step="0.01" name="crd"><br>
+      Taux annuel (%) : <input type="number" step="0.001" name="taux"><br>
+      Durée initiale (mois) : <input type="number" name="duree_initiale"><br>
+      Date de fin du crédit : <input type="date" name="fin_credit"><br>
+    </details><br>
+
+    <h4>Emprunteurs *</h4>
     <p id="erreur_parts" style="color:red; display:none;"></p>
     {% for c in clients %}
       <input type="checkbox" name="emprunteurs" value="{{ c.id }}"
@@ -306,6 +332,7 @@ function onChangeEmprunteur(checkbox) {
              oninput="validerPartCredit()"> %<br>
     {% endfor %}
 
+    <p><small>* Champs obligatoires</small></p>
     <button type="submit">Ajouter</button>
   </form>
 
@@ -320,11 +347,11 @@ function onChangeEmprunteur(checkbox) {
       <td>{{ client_names.get(c.id_client, "?") }}</td>
       <td>{{ compte_names.get(c.id_compte, "?") }}</td>
       <td>{{ c.type_credit }}</td>
-      <td>{{ c.capital_emprunte }} EUR</td>
-      <td>{{ c.crd }} EUR</td>
-      <td>{{ c.taux }} %</td>
+      <td>{{ c.capital_emprunte if c.capital_emprunte else "-" }} EUR</td>
+      <td>{{ c.crd if c.crd else "-" }} EUR</td>
+      <td>{{ c.taux if c.taux else "-" }} %</td>
       <td>{{ c.mensualite }} EUR</td>
-      <td>{{ c.fin_credit }}</td>
+      <td>{{ c.fin_credit if c.fin_credit else "-" }}</td>
       <td>{{ "Oui" if c.deja_preleve else "Non" }}</td>
       <td><a href="/supprimer_credit/{{ c.id_client }}/{{ c.id }}">Supprimer</a></td>
     </tr>
@@ -426,32 +453,53 @@ function onChangeEmprunteur(checkbox) {
 
     Nom du bien : <input type="text" name="nom" required><br>
     Valeur actuelle (EUR) : <input type="number" step="0.01" name="valeur" required><br>
-    Part détenue (%) : <input type="number" step="0.01" name="part" value="100" min="0.01" max="100"><br>
+    Part détenue (%) :
+    <input type="number" step="0.01" name="part" value="100" min="0.01" max="100"
+           id="part_patrimoine" oninput="verifierPartPatrimoine()"><br>
 
-    Crédit associé :
-    <select name="id_credit">
-      <option value="">Aucun</option>
-      {% for c in credits %}
-        <option value="{{ c.id }}">{{ c.type_credit }} - {{ c.capital_emprunte }} EUR</option>
-      {% endfor %}
-    </select><br>
+    <!-- Trigger warning indivision patrimoine -->
+    <div id="warning_part_patrimoine" style="display:none; background:#fff3cd; border:1px solid #ffc107; padding:10px; margin:6px 0;">
+      <strong>Attention — Bien détenu en indivision</strong><br>
+      La part détenue est inférieure à 100%. Si ce bien génère un revenu (loyer, SCPI…),
+      pensez à saisir <strong>uniquement la part du revenu correspondant à ce client</strong>
+      dans le champ "Revenu associé". Ne pas saisir le revenu total du bien.
+    </div>
+
+    Crédits associés (plusieurs possibles) :<br>
+    {% for cr in credits %}
+      <input type="checkbox" name="id_credits" value="{{ cr.id }}">
+      {{ cr.type_credit }} — {{ cr.mensualite }} EUR/mois
+      {% if cr.crd %}(CRD : {{ cr.crd }} EUR){% endif %}
+      — {{ client_names.get(cr.id_client, "?") }}<br>
+    {% else %}
+      <em>Aucun crédit enregistré</em><br>
+    {% endfor %}
 
     Revenu associé :
     <select name="id_revenu">
       <option value="">Aucun</option>
       {% for r in revenus %}
-        <option value="{{ r.id }}">{{ r.type_revenu }} - {{ r.montant }} EUR</option>
+        <option value="{{ r.id }}">{{ r.type_revenu }} - {{ r.montant }} EUR ({{ client_names.get(r.id_client, "?") }})</option>
       {% endfor %}
     </select><br>
 
     <button type="submit">Ajouter</button>
   </form>
 
+  <script>
+    function verifierPartPatrimoine() {
+      var part = parseFloat(document.getElementById("part_patrimoine").value) || 100;
+      var warning = document.getElementById("warning_part_patrimoine");
+      warning.style.display = (part < 100) ? "block" : "none";
+    }
+    verifierPartPatrimoine();
+  </script>
+
   <h3>Patrimoines enregistrés</h3>
   <table>
     <tr>
       <th>Client</th><th>Type</th><th>Nom</th><th>Valeur</th>
-      <th>Part</th><th>Valeur détenue</th><th>Crédit</th><th>Revenu</th><th>Action</th>
+      <th>Part</th><th>Valeur détenue</th><th>Crédits</th><th>Revenu</th><th>Action</th>
     </tr>
     {% for p in patrimoines %}
     <tr>
@@ -461,7 +509,11 @@ function onChangeEmprunteur(checkbox) {
       <td>{{ p.valeur }} EUR</td>
       <td>{{ p.part }} %</td>
       <td>{{ (p.valeur * p.part / 100) | round(2) }} EUR</td>
-      <td>{{ p.credit if p.credit else "-" }}</td>
+      <td>
+        {% if p.credits %}
+          {% for cr in p.credits %}{{ cr.nom }}{% if not loop.last %}, {% endif %}{% endfor %}
+        {% else %}-{% endif %}
+      </td>
       <td>{{ p.revenu if p.revenu else "-" }}</td>
       <td><a href="/supprimer_patrimoine/{{ p.id_client }}/{{ p.id }}">Supprimer</a></td>
     </tr>

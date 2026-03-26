@@ -14,13 +14,13 @@ class Credit:
 
     def __init__(self, 
                  type_de_credit : int, 
-                 capital_emprunte: float, 
-                 crd: float, 
-                 taux:float, 
-                 duree_initiale: int, 
                  mensualite: float, 
-                 fin_credit, 
-                 jour_echeance: int=1, 
+                 jour_echeance: int, 
+                 capital_emprunte: float | None = None, 
+                 crd: float | None = None, 
+                 taux:float | None = None, 
+                 duree_initiale: int | None = None, 
+                 fin_credit=None, 
                  compte=None,
                  id_compte: int | None = None,
                  deja_preleve: bool = False):
@@ -29,82 +29,101 @@ class Credit:
             raise ValueError("Type de crédit invalide")
 
         regles = self.REGLES_CREDIT[type_de_credit]
-        duree_max = regles["duree_max"]
-
-        if duree_initiale <= 0:
-            raise ValueError("La durée doit être positive")
-
-        if duree_max and duree_initiale > duree_max:
-            raise ValueError(f"La durée maximale pour {regles['nom']} est de {duree_max} mois")
-
-        if taux < 0:
-            raise ValueError("Le taux doit être positif")
-
         if mensualite <= 0:
             raise ValueError("La mensualité doit être positive")
-
-
+ 
+        if not (1 <= jour_echeance <= 28):
+            raise ValueError("Le jour d'échéance doit être compris entre 1 et 28")
+ 
+ 
+        if duree_initiale is not None:
+            if duree_initiale <= 0:
+                raise ValueError("La durée doit être positive")
+            duree_max = regles["duree_max"]
+            if duree_max and duree_initiale > duree_max:
+                raise ValueError(
+                    f"La durée maximale pour {regles['nom']} est de {duree_max} mois"
+                )
+ 
+        if taux is not None and taux < 0:
+            raise ValueError("Le taux doit être positif")
+ 
+        if capital_emprunte is not None and capital_emprunte < 0:
+            raise ValueError("Le capital emprunté doit être positif")
+ 
+        if crd is not None and crd < 0:
+            raise ValueError("Le CRD doit être positif")
+ 
         self.type_de_credit = type_de_credit
-        self.capital_emprunte = float(capital_emprunte)
-        self.crd = float(crd)
-        self.taux = float(taux)
-        self.duree_initiale = int(duree_initiale)
         self.mensualite = float(mensualite)
-        self.jour_echeance = jour_echeance
+        self.jour_echeance = int(jour_echeance)
+        self.capital_emprunte = float(capital_emprunte) if capital_emprunte is not None else None
+        self.crd = float(crd) if crd is not None else None
+        self.taux = float(taux) if taux is not None else None
+        self.duree_initiale = int(duree_initiale) if duree_initiale is not None else None
         self.compte = compte
         self.id_compte = id_compte
         self.deja_preleve = deja_preleve
         self.emprunteur = {}
-
-        if isinstance(fin_credit, datetime):
+ 
+        if fin_credit is None:
+            self.fin_credit = None
+        elif isinstance(fin_credit, datetime):
             self.fin_credit = fin_credit
-
-        elif isinstance(fin_credit, str):
+        elif isinstance(fin_credit, str) and fin_credit.strip() != "":
             for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
                 try:
                     self.fin_credit = datetime.strptime(fin_credit, fmt)
                     break
-
                 except ValueError:
                     continue
             else:
-                raise ValueError('Format de date invalide. Attendu : YYYY-MM-DD ou DD-MM-YYYY')
-            
+                raise ValueError("Format de date invalide. Attendu : YYYY-MM-DD ou DD-MM-YYYY")
         else:
-            raise TypeError("fin_credit doit être une date ou chaine de caractères")
-
-
+            self.fin_credit = None
+ 
     def ajouter_emprunteur(self, client, part: float = 1.0):
         if not (0 < part <= 1):
             raise ValueError("La part doit être comprise entre 0 et 1")
         ancienne_part = self.emprunteur.get(client, 0)
-        if sum(self.emprunteur.values()) - ancienne_part + part > 1:
+        if sum(self.emprunteur.values()) - ancienne_part + part > 1.0001:
             raise ValueError("La somme des parts dépasse 100%")
         self.emprunteur[client] = part
-
-    def mensualite_client(self, client):
-
+ 
+    def mensualite_client(self, client) -> float:
         if client not in self.emprunteur:
             raise ValueError("Ce client n'est pas associé à ce crédit")
-
+        
         return self.mensualite * self.emprunteur[client]
-
-    def nombre_emprunteurs(self):
+ 
+    def nombre_emprunteurs(self) -> int:
         return len(self.emprunteur)
-
-    def pourcentages_emprunteurs(self):
+    
+    def pourcentages_emprunteurs(self) -> dict:
         return {c.nom: p for c, p in self.emprunteur.items()}
 
     @property
     def nom(self) -> str:
-        """pour accéder au nom du type de crédit."""
         return self.REGLES_CREDIT[self.type_de_credit]["nom"]
+ 
+    def mois_restants(self) -> int | None:
+        """Retourne le nombre de mois restants si fin_credit est renseignée."""
+        if self.fin_credit is None:
+            return None
+        delta = self.fin_credit - datetime.now()
+        return max(0, round(delta.days / 30.44))
+ 
+    def cout_total_restant(self, client) -> float | None:
+        """
+        Coût total restant (intérêts) pour la part du client.
+        Nécessite fin_credit, crd et mensualite.
+        """
+        mois = self.mois_restants()
+        if mois is None or self.crd is None:
+            return None
+        part = self.emprunteur.get(client, 1.0)
+        return round(max(0, self.mensualite_client(client) * mois - self.crd * part), 2)
  
     def __repr__(self):
         noms = ", ".join(f"{c.nom} ({p * 100:.0f}%)" for c, p in self.emprunteur.items())
-        
-        return (
-            f"{self.nom} - "
-            f"Mensualité totale : {self.mensualite} € - "
-            f"Emprunteurs : {noms}"
-        )
+        return f"{self.nom} - Mensualité : {self.mensualite}€ - Emprunteurs : {noms}"

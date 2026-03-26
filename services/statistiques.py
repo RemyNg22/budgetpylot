@@ -244,23 +244,117 @@ def stats_comptes(clients: list, comptes_dict: dict, compte_ids: list) -> dict:
     return {"comptes": detail_comptes}
 
 
-# Taux d'endettement
+# Pondération bancaire des revenus
+PONDERATION_REVENUS = {
+    "salaire":                  1.00,
+    "prime fixe":               0.50,
+    "bonus":                    0.00,
+    "revenu non salarié":       1.00,
+    "allocations chômage":      0.00,
+    "pension d'invalidité":     0.00,
+    "retraite":                 1.00,
+    "RSA":                      0.00,
+    "APL":                      0.00,
+    "allocations familiales":   0.50,
+    "prime d'activité":         0.00,
+    "bourse étudiante":         0.00,
+    "loyer":                    0.70,
+    "revenu SCPI":              0.70,
+    "intérêt d'épargne":        0.50,
+    "coupon obligataire":       0.00,
+    "héritage":                 0.00,
+    "donation":                 0.00,
+    "gain exceptionnel":        0.00,
+    "vente d'actifs":           0.00,
+    "indemnité":                0.00,
+    "virement reçu":            0.00,
+    "remboursement":            0.00,
+    "autre":                    0.00,
+}
 
-def stats_endettement(client: Client) -> dict:
-
-    total_revenus_mensuels = 0.0
+def _revenus_ponderes_mensuels(client: Client) -> tuple[float, list]:
+    """
+    Calcule les revenus mensuels pondérés selon la grille bancaire.
+    Retourne (total_pondere, detail_par_revenu).
+    """
+    total = 0.0
+    detail = []
     for r in client.revenus:
+        coeff = PONDERATION_REVENUS.get(r.type_de_revenu, 0.0)
+        if coeff == 0.0:
+            continue
         if r.periodicite == "mensuelle":
-            total_revenus_mensuels += r.montant
+            montant_mensuel = r.montant
         elif r.periodicite == "annuelle":
-            total_revenus_mensuels += r.montant / 12
+            montant_mensuel = r.montant / 12
+        else:
+            continue  # revenus uniques non pris en compte
+        montant_pondere = montant_mensuel * coeff
+        total += montant_pondere
+        detail.append({
+            "type": r.type_de_revenu,
+            "montant_brut": round(montant_mensuel, 2),
+            "coefficient": coeff,
+            "montant_pondere": round(montant_pondere, 2),
+        })
+    return round(total, 2), detail
 
-    total_mensualites = sum(cr.mensualite_client(client) for cr in client.credits)
+
+def _charges_endettement(client: Client) -> float:
+    """
+    Charges retenues pour le taux d'endettement bancaire :
+    loyers payés + impôts + mensualités crédits en cours.
+    """
+    charges = 0.0
+    # Loyers payés
+    for d in client.depenses:
+        if d.categorie_depense in ("Loyer", "Charge immobilière (hors crédit)"):
+            charges += d.montant
+    # Impôts
+    for d in client.depenses:
+        if d.categorie_depense == "Impôts et taxes":
+            charges += d.montant
+    # Crédits
+    for cr in client.credits:
+        charges += cr.mensualite_client(client)
+    return round(charges, 2)
+
+def _charges_capacite(client: Client, inclure_loyer: bool) -> float:
+    """
+    Charges retenues pour la capacité d'emprunt :
+    - Ligne 1 (inclure_loyer=False) : impôts + crédits uniquement
+    - Ligne 2 (inclure_loyer=True)  : impôts + crédits + loyer
+    """
+    charges = 0.0
+    # Impôts
+    for d in client.depenses:
+        if d.categorie_depense == "Impôts et taxes":
+            charges += d.montant
+    # Crédits
+    for cr in client.credits:
+        charges += cr.mensualite_client(client)
+    # Loyer (optionnel)
+    if inclure_loyer:
+        for d in client.depenses:
+            if d.categorie_depense in ("Loyer", "Charge immobilière (hors crédit)"):
+                charges += d.montant
+    return round(charges, 2)
+
+
+# Taux d'endettement
+def stats_endettement(client: Client) -> dict:
+    """
+    Taux d'endettement bancaire réel.
+    Revenus pondérés selon grille bancaire.
+    Charges = loyers + impôts + crédits.
+    Seuil HCSF : 35%.
+    """
+    revenus_ponderes, detail_revenus = _revenus_ponderes_mensuels(client)
+    charges = _charges_endettement(client)
 
     taux_endettement = (
-        (total_mensualites / total_revenus_mensuels * 100)
-        if total_revenus_mensuels > 0 else 0.0
-    )
+        (charges / revenus_ponderes * 100)
+        if revenus_ponderes > 0 else 0.0)
 
     crd_total = sum(cr.crd for cr in client.credits)
     crd_par_type: dict[str, float] = {}
@@ -270,17 +364,13 @@ def stats_endettement(client: Client) -> dict:
     aujourd_hui = datetime.now()
     detail_credits = []
     for cr in client.credits:
-        # Durée restante
         delta = cr.fin_credit - aujourd_hui
         mois_restants = max(0, round(delta.days / 30.44))
-
-        # Coût total restant = mensualités restantes - CRD part client
         part_client = cr.emprunteur.get(client, 1.0)
         mensualite_part = cr.mensualite_client(client)
         cout_restant = round(
             max(0, mensualite_part * mois_restants - cr.crd * part_client), 2
         )
-
         detail_credits.append({
             "nom": cr.nom,
             "mensualite": round(mensualite_part, 2),
@@ -295,8 +385,9 @@ def stats_endettement(client: Client) -> dict:
     cout_total_global = sum(d["cout_total_restant"] for d in detail_credits)
 
     return {
-        "total_revenus_mensuels": round(total_revenus_mensuels, 2),
-        "total_mensualites": round(total_mensualites, 2),
+        "revenus_ponderes": revenus_ponderes,
+        "detail_revenus_ponderes": detail_revenus,
+        "charges_retenues": charges,
         "taux_endettement": round(taux_endettement, 2),
         "seuil_legal": 35.0,
         "alerte": taux_endettement > 35.0,
@@ -309,29 +400,36 @@ def stats_endettement(client: Client) -> dict:
 
 
 # Capacité d'emprunt
+def _calculer_capital(mensualite_max: float, taux_annuel: float, nb_ans: int) -> float:
+    """Capital empruntable via formule d'amortissement."""
+    taux_mensuel = taux_annuel / 100 / 12
+    n = nb_ans * 12
+    if mensualite_max <= 0:
+        return 0.0
+    if taux_mensuel == 0:
+        return mensualite_max * n
+    return mensualite_max * (1 - (1 + taux_mensuel) ** -n) / taux_mensuel
+
 
 def stats_capacite_emprunt(client: Client) -> dict:
     """
-    Capital empruntable sur 20 et 25 ans.
-    Mensualité max = revenus * 35% - mensualités actuelles.
-    Capital = mensualite_max * [(1 - (1+t)^-n) / t]
+    Capacité d'emprunt sur 20 et 25 ans, deux scénarios :
+    - Sans loyer : charges = impôts + crédits
+    - Avec loyer : charges = impôts + crédits + loyer (cas investissement locatif)
+    Revenus pondérés selon grille bancaire.
     Taux depuis API BdF ou fallback config.py.
     """
     from services.taux_manager import get_tous_les_taux
 
-    total_revenus_mensuels = 0.0
-    for r in client.revenus:
-        if r.periodicite == "mensuelle":
-            total_revenus_mensuels += r.montant
-        elif r.periodicite == "annuelle":
-            total_revenus_mensuels += r.montant / 12
+    revenus_ponderes, detail_revenus = _revenus_ponderes_mensuels(client)
+    charges_sans_loyer = _charges_capacite(client, inclure_loyer=False)
+    charges_avec_loyer = _charges_capacite(client, inclure_loyer=True)
 
-    total_mensualites_actuelles = sum(
-        cr.mensualite_client(client) for cr in client.credits
+    mensualite_dispo_sans_loyer = round(
+        max(0, revenus_ponderes * 0.35 - charges_sans_loyer), 2
     )
-
-    mensualite_max = round(
-        total_revenus_mensuels * 0.35 - total_mensualites_actuelles, 2
+    mensualite_dispo_avec_loyer = round(
+        max(0, revenus_ponderes * 0.35 - charges_avec_loyer), 2
     )
 
     taux_data = get_tous_les_taux()
@@ -340,32 +438,36 @@ def stats_capacite_emprunt(client: Client) -> dict:
     for duree_label, nb_ans in [("20_ans", 20), ("25_ans", 25)]:
         info_taux = taux_data[duree_label]
         taux_annuel = info_taux["taux"]
-        taux_mensuel = taux_annuel / 100 / 12
-        n = nb_ans * 12
 
-        if mensualite_max <= 0:
-            capital = 0.0
-        elif taux_mensuel == 0:
-            capital = mensualite_max * n
-        else:
-            capital = mensualite_max * (1 - (1 + taux_mensuel) ** -n) / taux_mensuel
+        capital_sans_loyer = _calculer_capital(
+            mensualite_dispo_sans_loyer, taux_annuel, nb_ans
+        )
+        capital_avec_loyer = _calculer_capital(
+            mensualite_dispo_avec_loyer, taux_annuel, nb_ans
+        )
 
         resultats[duree_label] = {
             "nb_ans": nb_ans,
             "taux": taux_annuel,
             "source_taux": info_taux["source"],
             "mise_a_jour_taux": info_taux["mise_a_jour"],
-            "capital_empruntable": round(max(0, capital), 2),
-            "mensualite_max": round(max(0, mensualite_max), 2),
+            # Scénario 1 : sans loyer (résidence principale, primo-accédant)
+            "sans_loyer": {
+                "mensualite_dispo": mensualite_dispo_sans_loyer,
+                "capital_empruntable": round(max(0, capital_sans_loyer), 2),
+            },
+            # Scénario 2 : avec loyer (investissement locatif, reste locataire)
+            "avec_loyer": {
+                "mensualite_dispo": mensualite_dispo_avec_loyer,
+                "capital_empruntable": round(max(0, capital_avec_loyer), 2),
+            },
         }
 
     return {
-        "total_revenus_mensuels": round(total_revenus_mensuels, 2),
-        "total_mensualites_actuelles": round(total_mensualites_actuelles, 2),
-        "mensualite_max_disponible": round(max(0, mensualite_max), 2),
-        "taux_endettement_actuel": round(
-            total_mensualites_actuelles / total_revenus_mensuels * 100, 2
-        ) if total_revenus_mensuels > 0 else 0.0,
+        "revenus_ponderes": revenus_ponderes,
+        "detail_revenus_ponderes": detail_revenus,
+        "charges_sans_loyer": charges_sans_loyer,
+        "charges_avec_loyer": charges_avec_loyer,
         "resultats": resultats,
     }
 
