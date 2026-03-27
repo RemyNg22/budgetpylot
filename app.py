@@ -66,6 +66,11 @@ def safe_redirect(msg=None):
         flash(msg)
     return redirect("/saisie")
 
+def redirect_etape(default: int = 1):
+    """Redirige vers l'étape indiquée dans le paramètre redirect_etape, ou l'étape par défaut."""
+    etape = parse_int(request.args.get("redirect_etape"), default)
+    return redirect(f"/saisie?etape={etape}")
+
 
 def next_id() -> int:
     global next_item_id
@@ -182,26 +187,65 @@ def generate_df():
 
 
 # Routes
+
+ETAPES = [
+    {"num": 0, "titre": "Accueil", "template": "etape_accueil.html"},
+    {"num": 1, "titre": "Clients & Comptes","template": "etape_clients_comptes.html"},
+    {"num": 2, "titre": "Revenus", "template": "etape_revenus.html"},
+    {"num": 3, "titre": "Dépenses", "template": "etape_depenses.html"},
+    {"num": 4, "titre": "Crédits", "template":"etape_credits.html"},
+    {"num": 5, "titre": "Épargne", "template": "etape_epargne.html"},
+    {"num": 6, "titre": "Patrimoine", "template": "etape_patrimoine.html"},
+    {"num": 7, "titre": "Synthèse",  "template":"etape_synthese.html"}]
+NB_ETAPES = len(ETAPES)
+
+
+def contexte_commun():
+    """Données communes à toutes les étapes."""
+    dfs = generate_df()
+    client_names = {c["id"]: c["nom"] for c in dfs["clients"].to_dict(orient="records")}
+    compte_names = {c["id"]: c["nom_compte"] for c in dfs["comptes"].to_dict(orient="records")}
+    return {"dfs": dfs,
+        "client_names": client_names,
+        "compte_names": compte_names,
+        "clients_list": dfs["clients"].to_dict(orient="records"),
+        "comptes_list": dfs["comptes"].to_dict(orient="records"),
+        "revenus_list": dfs["revenus"].to_dict(orient="records"),
+        "depenses_list": dfs["depenses"].to_dict(orient="records"),
+        "credits_list": dfs["credits"].to_dict(orient="records"),
+        "epargnes_list": dfs["epargnes"].to_dict(orient="records"),
+        "patrimoines_list": dfs["patrimoines"].to_dict(orient="records")}
+
+
 @app.route("/")
 def index():
-    return redirect("/saisie")
+    return redirect("/saisie?etape=0")
 
 
 @app.route("/saisie")
 def saisie():
-    dfs = generate_df()
-    client_names = {c["id"]: c["nom"] for c in dfs["clients"].to_dict(orient="records")}
-    compte_names = {c["id"]: c["nom_compte"] for c in dfs["comptes"].to_dict(orient="records")}
+    etape = parse_int(request.args.get("etape"), 0)
+    etape = max(0, min(etape, NB_ETAPES - 1))
+    info_etape = ETAPES[etape]
 
-    return render_template(
-        "saisie_budget.html",
-        clients=dfs["clients"].to_dict(orient="records"),
-        comptes=dfs["comptes"].to_dict(orient="records"),
-        revenus=dfs["revenus"].to_dict(orient="records"),
-        depenses=dfs["depenses"].to_dict(orient="records"),
-        credits=dfs["credits"].to_dict(orient="records"),
-        epargnes=dfs["epargnes"].to_dict(orient="records"),
-        patrimoines=dfs["patrimoines"].to_dict(orient="records"),
+    ctx = contexte_commun()
+    dfs = ctx["dfs"]
+
+    params = dict(
+        etape=etape,
+        etapes=ETAPES,
+        nb_etapes=NB_ETAPES,
+        etape_precedente=etape - 1 if etape > 0 else None,
+        etape_suivante=etape + 1 if etape < NB_ETAPES - 1 else None,
+        clients=ctx["clients_list"],
+        comptes=ctx["comptes_list"],
+        revenus=ctx["revenus_list"],
+        depenses=ctx["depenses_list"],
+        credits=ctx["credits_list"],
+        epargnes=ctx["epargnes_list"],
+        patrimoines=ctx["patrimoines_list"],
+        client_names=ctx["client_names"],
+        compte_names=ctx["compte_names"],
         type_revenu=Revenu.TYPE_REVENU,
         type_depense=Depense.TYPE_DEPENSE,
         categorie_depense=Depense.CATEGORIE_DEPENSE,
@@ -211,11 +255,11 @@ def saisie():
         jours=JOURS,
         mois=MOIS,
         mois_noms=MOIS_NOMS,
-        client_names=client_names,
-        compte_names=compte_names,
         mois_actuel=datetime.now().month,
         annee_actuelle=datetime.now().year,
-    )
+        tous_clients=clients,
+        ids_selectionnes=[],)
+    return render_template(info_etape["template"], **params)
 
 # Client
 
@@ -227,13 +271,13 @@ def ajouter_client():
         return safe_redirect("Nom invalide")
     clients[next_client_id] = Client(nom)
     next_client_id += 1
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_client/<int:cid>")
 def supprimer_client(cid):
     clients.pop(cid, None)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Compte
@@ -259,13 +303,13 @@ def ajouter_compte():
 
     comptes[next_compte_id] = compte
     next_compte_id += 1
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_compte/<int:cid>")
 def supprimer_compte(cid):
     comptes.pop(cid, None)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Revenu
@@ -299,7 +343,7 @@ def ajouter_revenu():
 
     rev.item_id = next_id()
     clients[client_id].ajouter_revenu(rev)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_revenu/<int:id_client>/<int:item_id>")
@@ -307,7 +351,7 @@ def supprimer_revenu(id_client, item_id):
     client = clients.get(id_client)
     if client:
         client.revenus = [r for r in client.revenus if r.item_id != item_id]
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Depense
@@ -341,7 +385,7 @@ def ajouter_depense():
 
     dep.item_id = next_id()
     clients[client_id].ajouter_depense(dep)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_depense/<int:id_client>/<int:item_id>")
@@ -349,7 +393,7 @@ def supprimer_depense(id_client, item_id):
     client = clients.get(id_client)
     if client:
         client.depenses = [d for d in client.depenses if d.item_id != item_id]
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Credit
@@ -416,7 +460,7 @@ def ajouter_credit():
     for client in cr.emprunteur.keys():
         client.ajouter_credit(cr)
 
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_credit/<int:id_client>/<int:item_id>")
@@ -424,7 +468,7 @@ def supprimer_credit(id_client, item_id):
     client = clients.get(id_client)
     if client:
         client.credits = [c for c in client.credits if c.item_id != item_id]
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Epargne
@@ -447,7 +491,7 @@ def ajouter_epargne():
 
     e.item_id = next_id()
     clients[client_id].ajouter_epargne(e)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_epargne/<int:id_client>/<int:item_id>")
@@ -455,7 +499,7 @@ def supprimer_epargne(id_client, item_id):
     client = clients.get(id_client)
     if client:
         client.epargnes = [e for e in client.epargnes if e.item_id != item_id]
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/epargne_versement_ponctuel/<int:id_client>/<int:epargne_id>", methods=["POST"])
@@ -480,7 +524,7 @@ def ajouter_versement_ponctuel(id_client, epargne_id):
     except ValueError as e:
         return safe_redirect(f"Erreur versement ponctuel : {e}")
 
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_versement_ponctuel/<int:id_client>/<int:epargne_id>/<int:vp_index>")
@@ -493,7 +537,7 @@ def supprimer_versement_ponctuel(id_client, epargne_id, vp_index):
         return safe_redirect("Epargne introuvable")
     if 0 <= vp_index < len(epargne.versements_ponctuels):
         epargne.versements_ponctuels.pop(vp_index)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Patrimoine
@@ -517,7 +561,7 @@ def ajouter_patrimoine():
         (r for r in client.revenus if r.item_id == revenu_id), None
     ) if revenu_id else None
 
-
+    # Recherche parmi tous les crédits de tous les clients
     tous_credits = []
     seen = set()
     for c in clients.values():
@@ -541,13 +585,14 @@ def ajouter_patrimoine():
             valeur=valeur,
             part=part,
             revenu=revenu_associe,
-            credits=credits_associes,)
+            credits=credits_associes,
+        )
     except ValueError as e:
         return safe_redirect(f"Erreur patrimoine : {e}")
 
     patrimoine.item_id = next_id()
     client.ajouter_patrimoine(patrimoine)
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 @app.route("/supprimer_patrimoine/<int:id_client>/<int:item_id>")
@@ -555,7 +600,7 @@ def supprimer_patrimoine(id_client, item_id):
     client = clients.get(id_client)
     if client:
         client.patrimoines = [p for p in client.patrimoines if p.item_id != item_id]
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 # Debug
@@ -691,7 +736,7 @@ def import_csv():
     next_item_id = ref_item[0]
 
     flash("Données importées avec succès")
-    return redirect("/saisie")
+    return redirect_etape()
 
 
 if __name__ == "__main__":

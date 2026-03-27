@@ -26,7 +26,7 @@ Ce projet est un simulateur bancaire personnel développé en **Python** avec un
 finance_app/
 
 ├── app.py                    # point d'entrée appli, routes flask
-├── config.py                 # paramètres globaux
+├── config.py                 # paramètres globaux (notamment gestion de taux de crédit)
 ├── README.md                 # Description projet
 ├── requirements.txt          # à installer
 ├── .gitignore                # à masquer
@@ -41,29 +41,30 @@ finance_app/
 │   └── epargne.py
 
 ├── services/                 # calculs métier
-│   ├── calcul_budget.py
-│   ├── calcul_credit.py
 │   ├── taux_manager.py
 │   └── statistiques.py
 
 ├── data/                     # sauvegarde des données
-│   ├── csv_manager.py
-│   └── sauvegardes/
+│   └── csv_manager.py
 |
 ├── templates/                # HTML
 │   ├── base.html
-│   ├── saisie_budget.html
+│   ├── saisie_budget.html (backup)
 │   ├── projection.html
-│   └── stats.html
+│   ├── stats.html
+│   ├── etape_accueil.html
+│   ├── etape_clients_comptes.html
+│   ├── etape_credits.html
+│   ├── etape_depenses.html
+│   ├── etape_epargne.html
+│   ├── etape_patrimoine.html
+│   ├── etape_revenus.html
+│   └── etape_synthese.html
 |
-├── static/                   # visuel
-│   ├── css
-│   │   └── style.css
-│   └── js
-│       └── charts.js
-
-└── utils/
-    ├── formatters.py
-    └── simulateurs.py
+└── static/                   # visuel
+    ├── css
+    │   └── style.css
+    └── js
+        └── charts.js
 
 ```

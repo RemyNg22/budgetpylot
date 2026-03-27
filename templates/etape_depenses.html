@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script>
+function majChampsMoisDepense(select) {
+  var champMois = document.getElementById("depense_mois");
+  if (select.value === "fixe" || select.value === "variable_mensuelle") {
+    champMois.value = ""; champMois.disabled = true;
+  } else {
+    champMois.disabled = false;
+  }
+}
+</script>
+
+<div class="section">
+  <h2>Étape 3 — Dépenses</h2>
+  <p>Saisissez toutes les dépenses fixes, variables et ponctuelles.</p>
+</div>
+
+<div class="section">
+  <h3>Ajouter une dépense</h3>
+  <form method="POST" action="/depense?redirect_etape=3">
+    Client : <select name="id_client">{% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}</select><br>
+    Compte : <select name="id_compte">{% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}</select><br>
+    Nom : <input type="text" name="nom" required><br>
+    Montant (EUR) : <input type="number" step="0.01" name="montant" required><br>
+    Type : <select name="type_depense" onchange="majChampsMoisDepense(this)">{% for t in type_depense %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select><br>
+    Catégorie : <select name="categorie_depense">{% for cat in categorie_depense %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}</select><br>
+    Jour : <select name="jour">{% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}</select><br>
+    Mois (si unique) : <select name="mois" id="depense_mois" disabled><option value="">--</option>{% for num, nom in mois_noms.items() %}<option value="{{ num }}">{{ nom }}</option>{% endfor %}</select><br>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h3>Dépenses enregistrées</h3>
+  <table>
+    <tr><th>Client</th><th>Compte</th><th>Nom</th><th>Montant</th><th>Type</th><th>Catégorie</th><th>Jour</th><th>Mois</th><th>Action</th></tr>
+    {% for d in depenses %}
+    <tr>
+      <td>{{ client_names.get(d.id_client, "?") }}</td>
+      <td>{{ compte_names.get(d.id_compte, "?") }}</td>
+      <td>{{ d.nom }}</td>
+      <td>{{ d.montant }} EUR</td>
+      <td>{{ d.type_depense }}</td>
+      <td>{{ d.categorie_depense }}</td>
+      <td>{{ d.jour }}</td>
+      <td>{{ mois_noms[d.mois] if d.mois else "--" }}</td>
+      <td><a href="/supprimer_depense/{{ d.id_client }}/{{ d.id }}?redirect_etape=3">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Aucune dépense</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="section accueil">
+  <h2>Bienvenue dans BudgetPylot</h2>
+  <p>Votre outil d'analyse financière personnelle. Choisissez comment commencer :</p>
+
+  <div class="choix-accueil">
+    <div class="carte-choix">
+      <h3>Nouvelle étude</h3>
+      <p>Saisissez vos informations pas à pas pour obtenir une synthèse financière complète.</p>
+      <a href="/saisie?etape=1" class="btn-primary">Commencer</a>
+    </div>
+
+    <div class="carte-choix">
+      <h3>Importer une sauvegarde</h3>
+      <p>Chargez un fichier CSV d'une étude précédente pour reprendre là où vous en étiez.</p>
+      <form method="POST" action="/import_csv" enctype="multipart/form-data">
+        <input type="file" name="fichier_csv" accept=".csv" required>
+        <button type="submit" class="btn-primary">Charger</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

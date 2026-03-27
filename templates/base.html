@@ -1,57 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Simulateur Budget</title>
-
-    <style>
-
-        body{
-            font-family: Arial;
-            margin:40px;
-        }
-
-        h1{
-            color:#2c3e50;
-        }
-
-        table{
-            border-collapse: collapse;
-            width:100%;
-            margin-top:20px;
-        }
-
-        th, td{
-            border:1px solid #ddd;
-            padding:8px;
-            text-align:center;
-        }
-
-        th{
-            background:#f2f2f2;
-        }
-
-        form{
-            margin-bottom:30px;
-        }
-
-        button{
-            padding:6px 12px;
-        }
-
-        .section{
-            margin-bottom:60px;
-        }
-
-    </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BudgetPylot</title>
+  <link rel="stylesheet" href="/static/css/style.css">
 </head>
-
 <body>
 
-<h1>Simulateur de budget</h1>
+<header>
+  <h1>BudgetPylot</h1>
+</header>
 
-{% block content %}
-{% endblock %}
+{% if etape is defined and etape > 0 %}
+<!-- Barre de progression -->
+<nav class="wizard-nav">
+  {% for e in etapes %}
+    {% if e.num > 0 %}
+      <a href="/saisie?etape={{ e.num }}"
+         class="wizard-step {% if e.num == etape %}active{% elif e.num < etape %}done{% endif %}">
+        {{ e.num }}. {{ e.titre }}
+      </a>
+    {% endif %}
+  {% endfor %}
+</nav>
+{% endif %}
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="flash">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Navigation wizard -->
+{% if etape is defined and etape > 0 %}
+<footer class="wizard-footer">
+  {% if etape_precedente is not none %}
+    <a href="/saisie?etape={{ etape_precedente }}" class="btn-nav">Précédent</a>
+  {% endif %}
+  {% if etape_suivante is not none %}
+    <a href="/saisie?etape={{ etape_suivante }}" class="btn-nav btn-primary">Suivant</a>
+  {% endif %}
+</footer>
+{% endif %}
 
 </body>
 </html>

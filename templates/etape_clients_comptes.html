@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="section">
+  <h2>Étape 1 — Clients et comptes</h2>
+  <p>Renseignez les personnes concernées par cette étude et leurs comptes bancaires.</p>
+</div>
+
+<!-- Clients -->
+<div class="section">
+  <h3>Clients</h3>
+  <form method="POST" action="/client?redirect_etape=1">
+    Nom : <input type="text" name="nom" required>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <table>
+    <tr><th>Nom</th><th>Action</th></tr>
+    {% for c in clients %}
+    <tr>
+      <td>{{ c.nom }}</td>
+      <td><a href="/supprimer_client/{{ c.id }}?redirect_etape=1">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="2">Aucun client</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<!-- Comptes -->
+<div class="section">
+  <h3>Comptes bancaires</h3>
+  <form method="POST" action="/compte?redirect_etape=1">
+    Nom du compte : <input type="text" name="new_compte" required><br>
+    Banque : <input type="text" name="banque" placeholder="Banque X"><br>
+    Solde actuel (EUR) : <input type="number" step="0.01" name="solde_initial" value="0" required><br>
+    Propriétaire(s) :<br>
+    {% for c in clients %}
+      <input type="checkbox" name="clients" value="{{ c.id }}"> {{ c.nom }}<br>
+    {% endfor %}
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <table>
+    <tr><th>Nom</th><th>Banque</th><th>Solde</th><th>Propriétaire(s)</th><th>Action</th></tr>
+    {% for comp in comptes %}
+    <tr>
+      <td>{{ comp.nom_compte }}</td>
+      <td>{{ comp.banque }}</td>
+      <td>{{ comp.solde_initial }} EUR</td>
+      <td>{{ comp.proprietaires }}{% if comp.est_joint %} (joint){% endif %}</td>
+      <td><a href="/supprimer_compte/{{ comp.id }}?redirect_etape=1">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Aucun compte</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

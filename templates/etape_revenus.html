@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script>
+function majChampsMoisRevenu(select) {
+  var champMois = document.getElementById("revenu_mois");
+  if (select.value === "mensuelle") {
+    champMois.value = ""; champMois.disabled = true;
+  } else {
+    champMois.disabled = false;
+  }
+}
+var REVENUS_INDIVISION = ["loyer", "revenu SCPI"];
+function verifierRevenuIndivision() {
+  var type = document.getElementById("type_revenu_select").value;
+  var warning = document.getElementById("warning_indivision");
+  warning.style.display = (REVENUS_INDIVISION.indexOf(type) !== -1) ? "block" : "none";
+}
+</script>
+
+<div class="section">
+  <h2>Étape 2 — Revenus</h2>
+  <p>Saisissez tous les revenus de chaque client.</p>
+</div>
+
+<div class="section">
+  <h3>Ajouter un revenu</h3>
+  <form method="POST" action="/revenu?redirect_etape=2">
+    Client :
+    <select name="id_client">
+      {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
+    </select><br>
+    Compte :
+    <select name="id_compte">
+      {% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}
+    </select><br>
+    Type :
+    <select name="type_revenu" id="type_revenu_select" onchange="verifierRevenuIndivision()">
+      {% for r in type_revenu %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+    </select><br>
+    Montant (EUR) : <input type="number" step="0.01" name="montant" required><br>
+    Périodicité :
+    <select name="periodicite" onchange="majChampsMoisRevenu(this)">
+      <option value="mensuelle">Mensuelle</option>
+      <option value="annuelle">Annuelle</option>
+      <option value="unique">Unique</option>
+    </select><br>
+    Jour : <select name="jour">{% for j in jours %}<option value="{{ j }}">{{ j }}</option>{% endfor %}</select><br>
+    Mois (si annuel/unique) :
+    <select name="mois" id="revenu_mois" disabled>
+      <option value="">--</option>
+      {% for num, nom in mois_noms.items() %}<option value="{{ num }}">{{ nom }}</option>{% endfor %}
+    </select><br>
+    <input type="checkbox" name="est_revenu_principal" id="est_revenu_principal">
+    <label for="est_revenu_principal">Revenu principal (référence projections)</label><br>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <div id="warning_indivision" style="display:none; background:#fff3cd; border:1px solid #ffc107; padding:10px; margin-top:8px;">
+    <strong>Attention — Revenu en indivision possible</strong><br>
+    Si ce revenu est partagé entre plusieurs bénéficiaires, saisissez la part de chaque client séparément.
+  </div>
+
+  <h3>Revenus enregistrés</h3>
+  <table>
+    <tr><th>Client</th><th>Compte</th><th>Type</th><th>Montant</th><th>Périodicité</th><th>Jour</th><th>Mois</th><th>Principal</th><th>Action</th></tr>
+    {% for r in revenus %}
+    <tr>
+      <td>{{ client_names.get(r.id_client, "?") }}</td>
+      <td>{{ compte_names.get(r.id_compte, "?") }}</td>
+      <td>{{ r.type_revenu }}</td>
+      <td>{{ r.montant }} EUR</td>
+      <td>{{ r.periodicite }}</td>
+      <td>{{ r.jour }}</td>
+      <td>{{ mois_noms[r.mois] if r.mois else "--" }}</td>
+      <td>{{ "Oui" if r.est_revenu_principal else "" }}</td>
+      <td><a href="/supprimer_revenu/{{ r.id_client }}/{{ r.id }}?redirect_etape=2">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">Aucun revenu</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

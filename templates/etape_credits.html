@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script>
+function validerPartCredit() {
+  var cases = document.querySelectorAll("input[name='emprunteurs']:checked");
+  var total = 0;
+  cases.forEach(function(cb) {
+    var champPart = document.getElementById("part_" + cb.value);
+    if (champPart) total += parseFloat(champPart.value) || 0;
+  });
+  var erreur = document.getElementById("erreur_parts");
+  if (total > 100) {
+    erreur.textContent = "La somme des parts dépasse 100% (" + total + "%)";
+    erreur.style.display = "block";
+    return false;
+  }
+  erreur.style.display = "none";
+  return true;
+}
+function onChangeEmprunteur(cb) {
+  var champPart = document.getElementById("part_" + cb.value);
+  champPart.disabled = !cb.checked;
+  champPart.value = cb.checked ? 100 : 0;
+  validerPartCredit();
+}
+</script>
+
+<div class="section">
+  <h2>Étape 4 — Crédits</h2>
+  <p>Saisissez les crédits en cours. Seuls la mensualité, le jour d'échéance et l'emprunteur sont obligatoires.</p>
+</div>
+
+<div class="section">
+  <h3>Ajouter un crédit</h3>
+  <form method="POST" action="/credit?redirect_etape=4" onsubmit="return validerPartCredit()">
+    Compte : <select name="id_compte">{% for comp in comptes %}<option value="{{ comp.id }}">{{ comp.nom_compte }}</option>{% endfor %}</select><br>
+    Type : <select name="type_credit">{% for k, v in type_credit.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select><br>
+    Mensualité (EUR) * : <input type="number" step="0.01" name="mensualite" required><br>
+    Jour d'échéance * : <input type="number" name="jour_echeance" min="1" max="28" value="1" required><br>
+    <input type="checkbox" name="deja_preleve" id="deja_preleve">
+    <label for="deja_preleve">Mensualité du mois en cours déjà prélevée</label><br>
+
+    <details>
+      <summary>Informations complémentaires (facultatif)</summary>
+      Capital emprunté (EUR) : <input type="number" step="0.01" name="capital_emprunte"><br>
+      CRD (EUR) : <input type="number" step="0.01" name="crd"><br>
+      Taux annuel (%) : <input type="number" step="0.001" name="taux"><br>
+      Durée initiale (mois) : <input type="number" name="duree_initiale"><br>
+      Date de fin : <input type="date" name="fin_credit"><br>
+    </details><br>
+
+    <h4>Emprunteurs *</h4>
+    <p id="erreur_parts" style="color:red;display:none;"></p>
+    {% for c in clients %}
+      <input type="checkbox" name="emprunteurs" value="{{ c.id }}" onchange="onChangeEmprunteur(this)">
+      {{ c.nom }}
+      <input type="number" name="parts" id="part_{{ c.id }}" value="0" min="0" max="100" step="0.1" disabled oninput="validerPartCredit()"> %<br>
+    {% endfor %}
+    <p><small>* Obligatoires</small></p>
+    <button type="submit">Ajouter</button>
+  </form>
+
+  <h3>Crédits enregistrés</h3>
+  <table>
+    <tr><th>Client</th><th>Type</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Action</th></tr>
+    {% for c in credits %}
+    <tr>
+      <td>{{ client_names.get(c.id_client, "?") }}</td>
+      <td>{{ c.type_credit }}</td>
+      <td>{{ c.mensualite }} EUR</td>
+      <td>{{ c.crd if c.crd else "-" }}</td>
+      <td>{{ c.taux if c.taux else "-" }}</td>
+      <td>{{ c.fin_credit if c.fin_credit else "-" }}</td>
+      <td><a href="/supprimer_credit/{{ c.id_client }}/{{ c.id }}?redirect_etape=4">Supprimer</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">Aucun crédit</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

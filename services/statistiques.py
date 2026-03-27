@@ -354,35 +354,45 @@ def stats_endettement(client: Client) -> dict:
 
     taux_endettement = (
         (charges / revenus_ponderes * 100)
-        if revenus_ponderes > 0 else 0.0)
+        if revenus_ponderes > 0 else 0.0
+    )
 
-    crd_total = sum(cr.crd for cr in client.credits)
+    crd_total = sum(cr.crd for cr in client.credits if cr.crd is not None)
     crd_par_type: dict[str, float] = {}
     for cr in client.credits:
-        crd_par_type[cr.nom] = crd_par_type.get(cr.nom, 0) + cr.crd
+        if cr.crd is not None:
+            crd_par_type[cr.nom] = crd_par_type.get(cr.nom, 0) + cr.crd
 
     aujourd_hui = datetime.now()
     detail_credits = []
     for cr in client.credits:
-        delta = cr.fin_credit - aujourd_hui
-        mois_restants = max(0, round(delta.days / 30.44))
         part_client = cr.emprunteur.get(client, 1.0)
         mensualite_part = cr.mensualite_client(client)
-        cout_restant = round(
-            max(0, mensualite_part * mois_restants - cr.crd * part_client), 2
-        )
+        if cr.fin_credit is not None:
+            delta = cr.fin_credit - aujourd_hui
+            mois_restants = max(0, round(delta.days / 30.44))
+        else:
+            mois_restants = None
+
+        if mois_restants is not None and cr.crd is not None:
+            cout_restant = round(
+                max(0, mensualite_part * mois_restants - cr.crd * part_client), 2
+            )
+        else:
+            cout_restant = None
+
         detail_credits.append({
             "nom": cr.nom,
             "mensualite": round(mensualite_part, 2),
-            "crd": round(cr.crd, 2),
+            "crd": round(cr.crd, 2) if cr.crd is not None else None,
             "taux": cr.taux,
-            "fin_credit": cr.fin_credit.strftime("%d/%m/%Y"),
+            "fin_credit": cr.fin_credit.strftime("%d/%m/%Y") if cr.fin_credit else None,
             "part": round(part_client * 100, 1),
             "mois_restants": mois_restants,
             "cout_total_restant": cout_restant,
         })
 
-    cout_total_global = sum(d["cout_total_restant"] for d in detail_credits)
+    cout_total_global = sum(d["cout_total_restant"] for d in detail_credits if d["cout_total_restant"] is not None)
 
     return {
         "revenus_ponderes": revenus_ponderes,
@@ -584,9 +594,12 @@ def stats_patrimoine(client: Client) -> dict:
         valeur_detenue = p.valeur_detention
 
         crd_bien = 0.0
-        if p.credit:
-            part_client = p.credit.emprunteur.get(client, 1.0)
-            crd_bien = p.credit.crd * part_client
+        mensualite_credit = 0.0
+        for cr in p.credits:
+            part_client = cr.emprunteur.get(client, 1.0)
+            if cr.crd is not None:
+                crd_bien += cr.crd * part_client
+            mensualite_credit += cr.mensualite * part_client
 
         revenu_annuel = 0.0
         if p.revenu:
@@ -600,12 +613,6 @@ def stats_patrimoine(client: Client) -> dict:
             (revenu_annuel / valeur_detenue * 100)
             if valeur_detenue > 0 and revenu_annuel > 0 else 0.0
         )
-
-        # Effort d'épargne immobilier = mensualité crédit - loyer perçu mensuel
-        mensualite_credit = 0.0
-        if p.credit:
-            part_client = p.credit.emprunteur.get(client, 1.0)
-            mensualite_credit = p.credit.mensualite * part_client
         loyer_mensuel = revenu_annuel / 12
         effort_immobilier = round(mensualite_credit - loyer_mensuel, 2)
 
@@ -626,7 +633,7 @@ def stats_patrimoine(client: Client) -> dict:
             "revenu_annuel": round(revenu_annuel, 2),
             "rendement_brut": round(rendement_brut, 2),
             "effort_immobilier": effort_immobilier,
-        })
+            "nb_credits": len(p.credits)})
 
     patrimoine_net = brut_total - crd_total
 
@@ -775,4 +782,4 @@ def synthese_complete(
         "epargne": stats_epargne(client_principal, nb_mois_epargne_libre) if client_principal else {},
         "patrimoine": stats_patrimoine(client_principal) if client_principal else {},
         "foyer": stats_foyer(clients) if len(clients) > 1 else None,
-    }
+        }
