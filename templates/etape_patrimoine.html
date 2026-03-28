@@ -38,7 +38,7 @@ function verifierPartPatrimoine() {
       <em>Aucun crédit</em><br>
     {% endfor %}
 
-    Revenu associé :
+    Revenus associés (plusieurs possibles) :
     <select name="id_revenu">
       <option value="">Aucun</option>
       {% for r in revenus %}
@@ -60,7 +60,7 @@ function verifierPartPatrimoine() {
       <td>{{ p.part }} %</td>
       <td>{{ (p.valeur * p.part / 100) | round(2) }} EUR</td>
       <td>{% if p.credits %}{% for cr in p.credits %}{{ cr.nom }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}-{% endif %}</td>
-      <td>{{ p.revenu if p.revenu else "-" }}</td>
+      <td>{% if p.revenus %}{% for r in p.revenus %}{{ r.type }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}-{% endif %}</td>
       <td><a href="/supprimer_patrimoine/{{ p.id_client }}/{{ p.id }}?redirect_etape=6">Supprimer</a></td>
     </tr>
     {% else %}

@@ -64,13 +64,13 @@ def parse_str(value, default=""):
 def safe_redirect(msg=None):
     if msg:
         flash(msg)
-    return redirect("/saisie")
+    etape = parse_int(request.args.get("redirect_etape"), 1)
+    return redirect(f"/saisie?etape={etape}")
 
 def redirect_etape(default: int = 1):
     """Redirige vers l'étape indiquée dans le paramètre redirect_etape, ou l'étape par défaut."""
     etape = parse_int(request.args.get("redirect_etape"), default)
     return redirect(f"/saisie?etape={etape}")
-
 
 def next_id() -> int:
     global next_item_id
@@ -171,7 +171,7 @@ def generate_df():
                 "valeur": p.valeur,
                 "part": p.part,
                 "credits": [{"id": cr.item_id, "nom": cr.nom} for cr in p.credits],
-                "revenu": p.revenu.type_de_revenu if p.revenu else None,
+                "revenus": [{"id": r.item_id, "type": r.type_de_revenu, "montant": r.montant} for r in p.revenus],
                 "id_client": cid,
             })
 
@@ -545,7 +545,7 @@ def supprimer_versement_ponctuel(id_client, epargne_id, vp_index):
 @app.route("/patrimoine", methods=["POST"])
 def ajouter_patrimoine():
     client_id = parse_int(request.form.get("id_client"))
-    revenu_id = parse_int(request.form.get("id_revenu"))
+    revenu_ids = request.form.getlist("id_revenus")
     credit_ids = request.form.getlist("id_credits")
     type_patrimoine = parse_str(request.form.get("type_patrimoine"))
     nom = parse_str(request.form.get("nom"))
@@ -557,17 +557,28 @@ def ajouter_patrimoine():
 
     client = clients[client_id]
 
-    revenu_associe = next(
-        (r for r in client.revenus if r.item_id == revenu_id), None
-    ) if revenu_id else None
+    tous_revenus = []
+    seen_r = set()
+    for c in clients.values():
+        for r in c.revenus:
+            if id(r) not in seen_r:
+                seen_r.add(id(r))
+                tous_revenus.append(r)
 
-    # Recherche parmi tous les crédits de tous les clients
+    revenus_associes = []
+    for rid_str in revenu_ids:
+        rid = parse_int(rid_str)
+        if rid is not None:
+            r = next((rv for rv in tous_revenus if rv.item_id == rid), None)
+            if r:
+                revenus_associes.append(r)
+
     tous_credits = []
-    seen = set()
+    seen_c = set()
     for c in clients.values():
         for cr in c.credits:
-            if id(cr) not in seen:
-                seen.add(id(cr))
+            if id(cr) not in seen_c:
+                seen_c.add(id(cr))
                 tous_credits.append(cr)
 
     credits_associes = []
@@ -584,7 +595,7 @@ def ajouter_patrimoine():
             nom=nom,
             valeur=valeur,
             part=part,
-            revenu=revenu_associe,
+            revenus=revenus_associes,
             credits=credits_associes,
         )
     except ValueError as e:
@@ -636,6 +647,9 @@ def projection(id_compte):
             flash("Format de date libre invalide (attendu : YYYY-MM-DD)")
 
     resultats = Client.projections(compte, id_compte, proprietaires, aujourd_hui, date_libre)
+    ids_proprietaires = [cid for cid in compte.client_ids if cid in clients]
+
+    url_retour = request.referrer or "/saisie?etape=7"
 
     return render_template(
         "projection.html",
@@ -645,6 +659,8 @@ def projection(id_compte):
         resultats=resultats,
         aujourd_hui=aujourd_hui,
         date_libre_str=date_libre_str or "",
+        ids_proprietaires=ids_proprietaires,
+        url_retour=url_retour,
     )
 
 
@@ -736,7 +752,27 @@ def import_csv():
     next_item_id = ref_item[0]
 
     flash("Données importées avec succès")
-    return redirect_etape()
+    return redirect("/saisie?etape=1")
+
+# Reset
+
+@app.route("/reset")
+def reset():
+    global clients, comptes, next_client_id, next_compte_id, next_item_id
+    clients = {}
+    comptes = {}
+    next_client_id = 0
+    next_compte_id = 0
+    next_item_id = 0
+    flash("Données réinitialisées")
+    return redirect("/saisie?etape=0")
+
+
+# A propos
+
+@app.route("/apropos")
+def apropos():
+    return render_template("apropos.html")
 
 
 if __name__ == "__main__":

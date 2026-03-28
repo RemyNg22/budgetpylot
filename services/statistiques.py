@@ -87,6 +87,8 @@ def stats_budget(clients: list, mois: int, annee: int) -> dict:
             else:
                 total_uniques += d.montant
 
+    # Crédits
+    # La mensualité est pondérée par la part de chaque client sélectionné.
     seen_credits = set()
     credits_detail = []
     total_mensualites = 0.0
@@ -246,30 +248,30 @@ def stats_comptes(clients: list, comptes_dict: dict, compte_ids: list) -> dict:
 
 # Pondération bancaire des revenus
 PONDERATION_REVENUS = {
-    "salaire":                  1.00,
-    "prime fixe":               0.50,
-    "bonus":                    0.00,
-    "revenu non salarié":       1.00,
-    "allocations chômage":      0.00,
-    "pension d'invalidité":     0.00,
-    "retraite":                 1.00,
-    "RSA":                      0.00,
-    "APL":                      0.00,
-    "allocations familiales":   0.50,
-    "prime d'activité":         0.00,
-    "bourse étudiante":         0.00,
-    "loyer":                    0.70,
-    "revenu SCPI":              0.70,
-    "intérêt d'épargne":        0.50,
-    "coupon obligataire":       0.00,
-    "héritage":                 0.00,
-    "donation":                 0.00,
-    "gain exceptionnel":        0.00,
-    "vente d'actifs":           0.00,
-    "indemnité":                0.00,
-    "virement reçu":            0.00,
-    "remboursement":            0.00,
-    "autre":                    0.00,
+    "Salaire": 1.00,
+    "Prime fixe": 0.50,
+    "Bonus":0.00,
+    "Revenu non salarié":1.00,
+    "Allocations chômage":  0.00,
+    "Pension d'invalidité":0.00,
+    "Retraite": 1.00,
+    "RSA": 0.00,
+    "APL": 0.00,
+    "Allocations familiales": 0.50,
+    "Prime d'activité": 0.00,
+    "Bourse étudiante":0.00,
+    "Loyer": 0.70,
+    "Revenu SCPI": 0.70,
+    "Intérêt d'épargne": 0.50,
+    "Coupon obligataire": 0.00,
+    "Héritage":0.00,
+    "Donation":0.00,
+    "Gain exceptionnel": 0.00,
+    "Vente d'actifs": 0.00,
+    "Indemnité":0.00,
+    "Virement reçu": 0.00,
+    "Remboursement": 0.00,
+    "Autre": 0.00,
 }
 
 def _revenus_ponderes_mensuels(client: Client) -> tuple[float, list]:
@@ -392,7 +394,10 @@ def stats_endettement(client: Client) -> dict:
             "cout_total_restant": cout_restant,
         })
 
-    cout_total_global = sum(d["cout_total_restant"] for d in detail_credits if d["cout_total_restant"] is not None)
+    cout_total_global = sum(
+        d["cout_total_restant"] for d in detail_credits
+        if d["cout_total_restant"] is not None
+    )
 
     return {
         "revenus_ponderes": revenus_ponderes,
@@ -782,4 +787,4 @@ def synthese_complete(
         "epargne": stats_epargne(client_principal, nb_mois_epargne_libre) if client_principal else {},
         "patrimoine": stats_patrimoine(client_principal) if client_principal else {},
         "foyer": stats_foyer(clients) if len(clients) > 1 else None,
-        }
+    }

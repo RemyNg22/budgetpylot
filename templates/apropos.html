@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="section" style="background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu-clair) 100%); color:white; border:none; padding:48px 40px; text-align:center;">
+  <img src="/static/img/logobudgetpylot.png" alt="BudgetPylot" style="height:64px; margin-bottom:20px;">
+  <h2 style="color:white; border:none; font-size:28px; margin-bottom:8px;">BudgetPylot</h2>
+  <p style="opacity:0.85; font-size:17px;">Votre copilote financier personnel</p>
+</div>
+
+<div class="section">
+  <h2>Qu'est-ce que BudgetPylot ?</h2>
+  <p style="font-size:15px; line-height:1.8; color:var(--gris-texte); max-width:720px;">
+    BudgetPylot est un outil d'analyse financière personnelle conçu pour vous aider à comprendre,
+    visualiser et piloter votre situation financière. En quelques étapes guidées, vous saisissez
+    vos revenus, dépenses, crédits, épargne et patrimoine, et obtenez une synthèse complète avec
+    projections, taux d'endettement, capacité d'emprunt et bien plus.
+  </p>
+</div>
+
+<div class="section">
+  <h2>Fonctionnalités principales</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card bleu">
+      <div class="kpi-label">Budget mensuel</div>
+      <div style="font-size:13px; color:var(--gris-texte); margin-top:6px; line-height:1.6;">
+        Revenus, dépenses par catégorie, solde mensuel, reste à vivre, taux d'épargne.
+      </div>
+    </div>
+    <div class="kpi-card vert">
+      <div class="kpi-label">Projections de solde</div>
+      <div style="font-size:13px; color:var(--gris-texte); margin-top:6px; line-height:1.6;">
+        Fin de mois, avant prochain salaire, date libre, courbe 12 mois.
+      </div>
+    </div>
+    <div class="kpi-card or">
+      <div class="kpi-label">Endettement & emprunt</div>
+      <div style="font-size:13px; color:var(--gris-texte); margin-top:6px; line-height:1.6;">
+        Taux d'endettement bancaire pondéré, capacité d'emprunt sur 20 et 25 ans avec taux BdF.
+      </div>
+    </div>
+    <div class="kpi-card rouge">
+      <div class="kpi-label">Épargne & patrimoine</div>
+      <div style="font-size:13px; color:var(--gris-texte); margin-top:6px; line-height:1.6;">
+        Projections avec intérêts composés, rendement locatif, patrimoine net.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>A propos du développeur</h2>
+  <p style="font-size:15px; line-height:1.8; color:var(--gris-texte); max-width:720px;">
+    Je suis Rémy Nguyen, développeur en formation avec un focus sur Python et la programmation orientée objet.
+    J'ai conçu budgetpylot comme un projet concret pour allier montée en compétences techniques et création d’un outil utile, simple et accessible pour piloter son budget au quotidien.
+    Mon approche est pragmatique : construire, tester, améliorer en continu, avec une attention particulière portée à la clarté et à l’efficacité des solutions proposées.
+    Travaillant dans le secteur bancaire, le but ici est de reproduire le plus efficacement une étude de budget avec des statistiques bancaires (par ex une pondération sur les revenus locatifs, 
+    une étude de capacité d'épargne de reste à vivre.)
+    <br>
+    <br>
+    Mon GitHub : <a href="https://github.com/RemyNg22">https://github.com/RemyNg22</a>
+    <br>
+    Mon adresse mail <a href="mailto:remyng22@gmail.com">remyng22@gmail.com</a>
+  </p>
+</div>
+
+<div class="section">
+  <h2>Confidentialité</h2>
+  <p style="font-size:15px; line-height:1.8; color:var(--gris-texte); max-width:720px;">
+    BudgetPylot fonctionne entièrement en local. Vos données ne sont jamais envoyées
+    sur un serveur externe — elles restent dans la mémoire de votre session et peuvent
+    être exportées sous forme de fichier CSV que vous conservez sur votre ordinateur.
+  </p>
+</div>
+
+<div class="section" style="text-align:center;">
+  <a href="/saisie?etape=0" class="btn-primary">Commencer une analyse</a>
+</div>
+
+{% endblock %}

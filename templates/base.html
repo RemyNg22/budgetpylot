@@ -9,9 +9,17 @@
 <body>
 
 <header>
-  <a href="/saisie?etape=0">
+  <a href="/saisie?etape=0" class="header-logo-link">
     <img src="/static/img/logobudgetpylot.png" alt="BudgetPylot" class="logo">
   </a>
+  <div class="header-tagline">
+    <span class="header-title">BudgetPylot</span>
+    <span class="header-sub">Votre copilote financier personnel</span>
+  </div>
+  <div class="header-actions">
+    <a href="/export_csv" class="btn-header-csv" title="Sauvegarder">&#8681; Sauvegarder</a>
+    <a href="/reset" class="btn-header-reset" title="Réinitialiser" onclick="return confirm('Réinitialiser toutes les données ? Cette action est irréversible.')">&#10006; Reset</a>
+  </div>
 </header>
 
 {% if etape is defined and etape > 0 %}
@@ -39,8 +47,18 @@
   {% block content %}{% endblock %}
 </main>
 
+<!-- Footer global -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <span>BudgetPylot &copy; 2025</span>
+    <a href="/apropos">A propos</a>
+    <a href="/export_csv">&#8681; Sauvegarder le CSV</a>
+    <a href="/reset" onclick="return confirm('Réinitialiser toutes les données ?')">&#10006; Réinitialiser</a>
+  </div>
+</footer>
+
 {% if etape is defined and etape > 0 %}
-<footer class="wizard-footer">
+<div class="wizard-footer">
   <div>
     {% if etape_precedente is not none %}
       <a href="/saisie?etape={{ etape_precedente }}" class="btn-nav">&#8592; Précédent</a>
@@ -51,7 +69,7 @@
       <a href="/saisie?etape={{ etape_suivante }}" class="btn-primary">Suivant &#8594;</a>
     {% endif %}
   </div>
-</footer>
+</div>
 {% endif %}
 
 </body>

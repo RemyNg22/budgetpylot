@@ -1,11 +1,11 @@
 class Revenu:
 
     TYPE_REVENU = (
-        "salaire", "prime fixe", "bonus", "revenu non salarié", "allocations chômage",
-        "pension d'invalidité", "retraite", "RSA", "APL", "allocations familiales",
-        "prime d'activité", "bourse étudiante", "loyer", "revenu SCPI", "intérêt d'épargne",
-        "coupon obligataire", "héritage", "donation", "gain exceptionnel",
-        "vente d'actifs", "indemnité", "virement reçu", "remboursement", "autre"
+        "Salaire", "Prime fixe", "Bonus", "Revenu non salarié", "Allocations chômage",
+        "Pension d'invalidité", "Retraite", "RSA", "APL", "Allocations familiales",
+        "Prime d'activité", "Bourse étudiante", "Loyer", "Revenu SCPI", "Intérêt d'épargne",
+        "Coupon obligataire", "Héritage", "Donation", "Gain exceptionnel",
+        "Vente d'actifs", "Indemnité", "Virement reçu", "Remboursement", "Autre"
     )
 
     PERIODE = ("mensuelle", "annuelle", "unique")
