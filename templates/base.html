@@ -9,11 +9,12 @@
 <body>
 
 <header>
-  <h1>BudgetPylot</h1>
+  <a href="/saisie?etape=0">
+    <img src="/static/img/logobudgetpylot.png" alt="BudgetPylot" class="logo">
+  </a>
 </header>
 
 {% if etape is defined and etape > 0 %}
-<!-- Barre de progression -->
 <nav class="wizard-nav">
   {% for e in etapes %}
     {% if e.num > 0 %}
@@ -38,15 +39,18 @@
   {% block content %}{% endblock %}
 </main>
 
-<!-- Navigation wizard -->
 {% if etape is defined and etape > 0 %}
 <footer class="wizard-footer">
-  {% if etape_precedente is not none %}
-    <a href="/saisie?etape={{ etape_precedente }}" class="btn-nav">Précédent</a>
-  {% endif %}
-  {% if etape_suivante is not none %}
-    <a href="/saisie?etape={{ etape_suivante }}" class="btn-nav btn-primary">Suivant</a>
-  {% endif %}
+  <div>
+    {% if etape_precedente is not none %}
+      <a href="/saisie?etape={{ etape_precedente }}" class="btn-nav">&#8592; Précédent</a>
+    {% endif %}
+  </div>
+  <div>
+    {% if etape_suivante is not none %}
+      <a href="/saisie?etape={{ etape_suivante }}" class="btn-primary">Suivant &#8594;</a>
+    {% endif %}
+  </div>
 </footer>
 {% endif %}
 

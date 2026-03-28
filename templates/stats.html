@@ -4,57 +4,58 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- En-tête -->
-<div class="section">
-  <h2>Statistiques budgétaires</h2>
-  <p>
-    Client(s) : <strong>{{ synthese.noms_clients | join(", ") }}</strong>
-    &nbsp;|&nbsp;
-    {{ mois_noms[mois] }} {{ annee }}
-  </p>
-  <p>Calculé le {{ synthese.date_calcul }}</p>
-
-  <form method="GET" action="/stats">
-    {% for cid, c in tous_clients.items() %}
-      <input type="checkbox" name="clients" value="{{ cid }}"
-             {% if cid in ids_selectionnes %}checked{% endif %}>
-      {{ c.nom }}
-    {% endfor %}
-    &nbsp;
-    Mois :
-    <select name="mois">
-      {% for num, nom in mois_noms.items() %}
-        <option value="{{ num }}" {% if num == mois %}selected{% endif %}>{{ nom }}</option>
+<!-- En-tête stats -->
+<div class="section" style="background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu-clair) 100%); color:white; border:none; padding:28px 32px;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h2 style="color:white; border:none; font-size:22px; margin-bottom:4px;">
+        &#128202; Statistiques — {{ synthese.noms_clients | join(" & ") }}
+      </h2>
+      <p style="opacity:0.8; font-size:14px;">{{ mois_noms[mois] }} {{ annee }} &nbsp;|&nbsp; Calculé le {{ synthese.date_calcul }}</p>
+    </div>
+    <form method="GET" action="/stats" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
+      {% for cid, c in tous_clients.items() %}
+        <label style="color:white; display:inline-flex; align-items:center; gap:5px; font-size:13px;">
+          <input type="checkbox" name="clients" value="{{ cid }}" {% if cid in ids_selectionnes %}checked{% endif %}>
+          {{ c.nom }}
+        </label>
       {% endfor %}
-    </select>
-    Année : <input type="number" name="annee" value="{{ annee }}" min="2000" max="2100" style="width:80px">
-    Projection épargne (mois) : <input type="number" name="nb_mois_epargne" value="{{ nb_mois_epargne }}" min="1" max="360" style="width:70px">
-    <button type="submit">Actualiser</button>
-  </form>
+      <select name="mois" style="max-width:130px; padding:7px 10px; font-size:13px; margin-bottom:0;">
+        {% for num, nom in mois_noms.items() %}
+          <option value="{{ num }}" {% if num == mois %}selected{% endif %}>{{ nom }}</option>
+        {% endfor %}
+      </select>
+      <input type="number" name="annee" value="{{ annee }}" min="2000" max="2100" style="max-width:80px; padding:7px 10px; font-size:13px; margin-bottom:0;">
+      <input type="number" name="nb_mois_epargne" value="{{ nb_mois_epargne }}" min="1" max="360" placeholder="Mois épargne" style="max-width:100px; padding:7px 10px; font-size:13px; margin-bottom:0;" title="Horizon projection épargne (mois)">
+      <button type="submit" style="background:var(--vert); color:white; border:none; padding:8px 18px; border-radius:8px; font-weight:600; cursor:pointer;">Actualiser</button>
+    </form>
+  </div>
 </div>
 
 {% set b = synthese.budget %}
 
-<!-- Revenus -->
+<!-- KPI revenus -->
 <div class="section">
-  <h3>Revenus</h3>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr>
-      <td>Revenus du mois ({{ mois_noms[mois] }})</td>
-      <td><strong>{{ b.total_revenus_mois }} EUR</strong></td>
-    </tr>
-    <tr>
-      <td>Revenus mensuels moyens (hors uniques)</td>
-      <td>{{ b.revenus_mensuels_moyens }} EUR</td>
-    </tr>
-    <tr>
-      <td>Revenus annualisés</td>
-      <td>{{ b.total_revenus_annualises }} EUR</td>
-    </tr>
-  </table>
+  <h2>&#128176; Revenus</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card vert">
+      <div class="kpi-label">Revenus du mois</div>
+      <div class="kpi-value positif">{{ b.total_revenus_mois }} EUR</div>
+      <div class="kpi-sub">{{ mois_noms[mois] }} {{ annee }}</div>
+    </div>
+    <div class="kpi-card bleu">
+      <div class="kpi-label">Revenus mensuels moyens</div>
+      <div class="kpi-value">{{ b.revenus_mensuels_moyens }} EUR</div>
+      <div class="kpi-sub">Hors revenus uniques</div>
+    </div>
+    <div class="kpi-card or">
+      <div class="kpi-label">Revenus annualisés</div>
+      <div class="kpi-value">{{ b.total_revenus_annualises }} EUR</div>
+      <div class="kpi-sub">Base de calcul annuelle</div>
+    </div>
+  </div>
 
-  <h4>Détail des revenus</h4>
+  <h3>Détail des revenus</h3>
   <table>
     <tr>
       {% if synthese.noms_clients | length > 1 %}<th>Client</th>{% endif %}
@@ -64,33 +65,48 @@
     <tr>
       {% if synthese.noms_clients | length > 1 %}<td>{{ r.client }}</td>{% endif %}
       <td>{{ r.type }}</td>
-      <td>{{ r.montant }} EUR</td>
-      <td>{{ r.periodicite }}</td>
-      <td>{{ "Oui" if r.principal else "" }}</td>
+      <td class="positif">{{ r.montant }} EUR</td>
+      <td><span class="badge badge-bleu">{{ r.periodicite }}</span></td>
+      <td>{% if r.principal %}<span class="badge badge-or">Principal</span>{% endif %}</td>
     </tr>
     {% else %}
-    <tr><td colspan="5">Aucun revenu ce mois-ci</td></tr>
+    <tr><td colspan="5" style="color:var(--gris-texte); font-style:italic;">Aucun revenu ce mois-ci</td></tr>
     {% endfor %}
   </table>
 </div>
 
-<!-- Dépenses -->
+<!-- KPI dépenses -->
 <div class="section">
-  <h3>Dépenses</h3>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr>
-      <td>Total charges du mois (dépenses + crédits)</td>
-      <td><strong>{{ b.total_charges }} EUR</strong></td>
-    </tr>
-    <tr><td>Dont dépenses fixes</td><td>{{ b.total_fixes }} EUR</td></tr>
-    <tr><td>Dont dépenses variables</td><td>{{ b.total_variables }} EUR</td></tr>
-    <tr><td>Dont dépenses uniques</td><td>{{ b.total_uniques }} EUR</td></tr>
-    <tr><td>Dont mensualités crédits</td><td>{{ b.total_mensualites }} EUR</td></tr>
-    <tr><td>Dont épargne du mois</td><td>{{ b.total_epargne_mois }} EUR</td></tr>
-  </table>
+  <h2>&#128176; Dépenses</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card rouge">
+      <div class="kpi-label">Total charges</div>
+      <div class="kpi-value negatif">{{ b.total_charges }} EUR</div>
+      <div class="kpi-sub">Dépenses + crédits</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dépenses fixes</div>
+      <div class="kpi-value">{{ b.total_fixes }} EUR</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dépenses variables</div>
+      <div class="kpi-value">{{ b.total_variables }} EUR</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Dépenses uniques</div>
+      <div class="kpi-value">{{ b.total_uniques }} EUR</div>
+    </div>
+    <div class="kpi-card or">
+      <div class="kpi-label">Mensualités crédits</div>
+      <div class="kpi-value">{{ b.total_mensualites }} EUR</div>
+    </div>
+    <div class="kpi-card vert">
+      <div class="kpi-label">Épargne du mois</div>
+      <div class="kpi-value positif">{{ b.total_epargne_mois }} EUR</div>
+    </div>
+  </div>
 
-  <h4>Détail des dépenses</h4>
+  <h3>Détail des dépenses</h3>
   <table>
     <tr>
       {% if synthese.noms_clients | length > 1 %}<th>Client</th>{% endif %}
@@ -101,135 +117,143 @@
       {% if synthese.noms_clients | length > 1 %}<td>{{ d.client }}</td>{% endif %}
       <td>{{ d.nom }}</td>
       <td>{{ d.categorie }}</td>
-      <td>{{ d.montant }} EUR</td>
-      <td>{{ d.type }}</td>
+      <td class="negatif">{{ d.montant }} EUR</td>
+      <td><span class="badge badge-bleu">{{ d.type }}</span></td>
       <td>{{ d.jour }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="6">Aucune dépense ce mois-ci</td></tr>
+    <tr><td colspan="6" style="color:var(--gris-texte); font-style:italic;">Aucune dépense</td></tr>
     {% endfor %}
   </table>
 
-  <h4>Mensualités crédits</h4>
+  {% if b.credits_detail %}
+  <h3>Mensualités crédits</h3>
   <table>
-    <tr>
-      {% if synthese.noms_clients | length > 1 %}<th>Client(s)</th>{% endif %}
-      <th>Type de crédit</th><th>Mensualité</th><th>Taux</th><th>CRD</th>
-    </tr>
+    <tr><th>Crédit</th><th>Mensualité</th><th>Taux</th><th>CRD</th></tr>
     {% for cr in b.credits_detail %}
     <tr>
-      {% if synthese.noms_clients | length > 1 %}<td>{{ cr.client }}</td>{% endif %}
       <td>{{ cr.nom }}</td>
-      <td>{{ cr.mensualite }} EUR</td>
-      <td>{{ cr.taux }} %</td>
-      <td>{{ cr.crd }} EUR</td>
+      <td class="negatif">{{ cr.mensualite }} EUR</td>
+      <td>{% if cr.taux %}{{ cr.taux }} %{% else %}-{% endif %}</td>
+      <td>{% if cr.crd %}{{ cr.crd }} EUR{% else %}-{% endif %}</td>
     </tr>
-    {% else %}
-    <tr><td colspan="5">Aucun crédit</td></tr>
     {% endfor %}
   </table>
+  {% endif %}
 </div>
 
-<!-- Camembert -->
+<!-- Camembert + synthèse -->
 <div class="section">
-  <h3>Répartition des charges</h3>
-  <canvas id="camembertDepenses" width="400" height="400"></canvas>
-  <script>
-    var ctx = document.getElementById("camembertDepenses").getContext("2d");
-    var segments = {{ b.segments_camembert | tojson }};
-    var couleurs = {
-      "Loyer": "#4e79a7", "Assurances": "#f28e2b", "Energie": "#e15759",
-      "Numérique": "#76b7b2", "Impôts": "#59a14f", "Dépenses courantes": "#edc948",
-      "Transport": "#b07aa1", "Loisirs": "#ff9da7", "Santé": "#9c755f",
-      "Autre": "#bab0ac", "Epargne": "#d4e157", "Crédits": "#ef5350"
-    };
-    var labels = Object.keys(segments);
-    new Chart(ctx, {
-      type: "pie",
-      data: {
-        labels: labels,
-        datasets: [{ data: Object.values(segments), backgroundColor: labels.map(function(l) { return couleurs[l] || "#cccccc"; }) }]
-      },
-      options: {
-        plugins: {
-          legend: { position: "right" },
-          tooltip: { callbacks: { label: function(ctx) {
-            var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-            return ctx.label + " : " + ctx.parsed.toFixed(2) + " EUR (" + ((ctx.parsed / total) * 100).toFixed(1) + "%)";
-          }}}
-        }
-      }
-    });
-  </script>
+  <h2>&#127771; Répartition des charges & Synthèse</h2>
+  <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:flex-start;">
+
+    <div style="flex:0 0 320px; max-width:100%;">
+      <canvas id="camembertDepenses" width="320" height="320"></canvas>
+    </div>
+
+    <div style="flex:1; min-width:220px;">
+      <div class="kpi-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="kpi-card {% if b.solde_mensuel >= 0 %}vert{% else %}rouge{% endif %}">
+          <div class="kpi-label">Solde mensuel</div>
+          <div class="kpi-value {% if b.solde_mensuel >= 0 %}positif{% else %}negatif{% endif %}">
+            {{ b.solde_mensuel }} EUR
+          </div>
+          <div class="kpi-sub">Revenus - charges</div>
+        </div>
+        <div class="kpi-card {% if b.reste_a_vivre >= 0 %}vert{% else %}rouge{% endif %}">
+          <div class="kpi-label">Reste à vivre</div>
+          <div class="kpi-value {% if b.reste_a_vivre >= 0 %}positif{% else %}negatif{% endif %}">
+            {{ b.reste_a_vivre }} EUR
+          </div>
+          <div class="kpi-sub">Revenus - fixes - crédits</div>
+        </div>
+        <div class="kpi-card {% if b.capacite_epargne_mensuelle >= 0 %}vert{% else %}rouge{% endif %}">
+          <div class="kpi-label">Capacité d'épargne</div>
+          <div class="kpi-value {% if b.capacite_epargne_mensuelle >= 0 %}positif{% else %}negatif{% endif %}">
+            {{ b.capacite_epargne_mensuelle }} EUR
+          </div>
+          <div class="kpi-sub">Reste à vivre - variables</div>
+        </div>
+        <div class="kpi-card or">
+          <div class="kpi-label">Taux d'effort épargne</div>
+          <div class="kpi-value">{{ b.taux_effort_epargne }} %</div>
+          <div class="kpi-sub">Épargne / revenus</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Synthèse mensuelle -->
-<div class="section">
-  <h3>Synthèse mensuelle</h3>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr>
-      <td>Solde mensuel (revenus - charges)</td>
-      <td class="{{ 'positif' if b.solde_mensuel >= 0 else 'negatif' }}"><strong>{{ b.solde_mensuel }} EUR</strong></td>
-    </tr>
-    <tr>
-      <td>Reste à vivre (revenus - fixes - crédits)</td>
-      <td class="{{ 'positif' if b.reste_a_vivre >= 0 else 'negatif' }}">{{ b.reste_a_vivre }} EUR</td>
-    </tr>
-    <tr>
-      <td>Capacité d'épargne mensuelle (reste à vivre - variables)</td>
-      <td class="{{ 'positif' if b.capacite_epargne_mensuelle >= 0 else 'negatif' }}">{{ b.capacite_epargne_mensuelle }} EUR</td>
-    </tr>
-    <tr><td>Taux d'effort d'épargne</td><td>{{ b.taux_effort_epargne }} %</td></tr>
-  </table>
-</div>
+<script>
+var ctx = document.getElementById("camembertDepenses").getContext("2d");
+var segments = {{ b.segments_camembert | tojson }};
+var couleurs = {
+  "Loyer":"#1a3a6e","Assurances":"#f5a623","Energie":"#e53935",
+  "Numérique":"#00acc1","Impôts":"#4caf50","Dépenses courantes":"#ff9800",
+  "Transport":"#7b1fa2","Loisirs":"#e91e63","Santé":"#26a69a",
+  "Autre":"#90a4ae","Epargne":"#8bc34a","Crédits":"#ef5350"
+};
+var labels = Object.keys(segments);
+new Chart(ctx, {
+  type: "doughnut",
+  data: {
+    labels: labels,
+    datasets: [{ data: Object.values(segments), backgroundColor: labels.map(function(l){ return couleurs[l] || "#ccc"; }), borderWidth: 2, borderColor: "#fff" }]
+  },
+  options: {
+    cutout: "55%",
+    plugins: {
+      legend: { position: "right", labels: { font: { family: "DM Sans", size: 12 }, padding: 12 } },
+      tooltip: { callbacks: { label: function(ctx) {
+        var total = ctx.dataset.data.reduce(function(a,b){return a+b;},0);
+        return ctx.label + " : " + ctx.parsed.toFixed(2) + " EUR (" + ((ctx.parsed/total)*100).toFixed(1) + "%)";
+      }}}
+    }
+  }
+});
+</script>
 
-<!-- Comptes et projections -->
+<!-- Comptes -->
 {% set cp = synthese.comptes %}
-{% if cp.comptes %}
+{% if cp and cp.comptes %}
 <div class="section">
-  <h3>Comptes et projections</h3>
+  <h2>&#127968; Comptes et projections</h2>
   {% for compte in cp.comptes %}
-  <h4>{{ compte.nom }} ({{ compte.banque }}){% if compte.est_joint %} — Compte joint{% endif %}</h4>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr><td>Solde actuel</td><td><strong>{{ compte.solde_actuel }} EUR</strong></td></tr>
-    <tr>
-      <td>Solde estimé fin de mois</td>
-      <td class="{{ 'positif' if compte.solde_fin_mois >= compte.solde_actuel else 'negatif' }}">{{ compte.solde_fin_mois }} EUR</td>
-    </tr>
-    {% if compte.solde_prochain_salaire is not none %}
-    <tr>
-      <td>Solde avant prochain {{ compte.revenu_principal }} ({{ compte.date_prochain_salaire }})</td>
-      <td class="{{ 'positif' if compte.solde_prochain_salaire >= 0 else 'negatif' }}">{{ compte.solde_prochain_salaire }} EUR</td>
-    </tr>
-    {% endif %}
-  </table>
-
-  <!-- Courbe évolution 12 mois -->
-  <canvas id="courbe_{{ loop.index }}" height="120"></canvas>
-  <script>
+  <div style="margin-bottom:24px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+      <h3 style="margin:0;">{{ compte.nom }} ({{ compte.banque }})</h3>
+      {% if compte.est_joint %}<span class="badge badge-or">Joint</span>{% endif %}
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card bleu">
+        <div class="kpi-label">Solde actuel</div>
+        <div class="kpi-value">{{ compte.solde_actuel }} EUR</div>
+      </div>
+      <div class="kpi-card {% if compte.solde_fin_mois >= compte.solde_actuel %}vert{% else %}rouge{% endif %}">
+        <div class="kpi-label">Fin de mois</div>
+        <div class="kpi-value {% if compte.solde_fin_mois >= compte.solde_actuel %}positif{% else %}negatif{% endif %}">{{ compte.solde_fin_mois }} EUR</div>
+      </div>
+      {% if compte.solde_prochain_salaire is not none %}
+      <div class="kpi-card {% if compte.solde_prochain_salaire >= 0 %}vert{% else %}rouge{% endif %}">
+        <div class="kpi-label">Avant {{ compte.revenu_principal }}</div>
+        <div class="kpi-value {% if compte.solde_prochain_salaire >= 0 %}positif{% else %}negatif{% endif %}">{{ compte.solde_prochain_salaire }} EUR</div>
+        <div class="kpi-sub">{{ compte.date_prochain_salaire }}</div>
+      </div>
+      {% endif %}
+    </div>
+    <canvas id="courbe_{{ loop.index }}" height="80" style="margin-top:12px;"></canvas>
+    <script>
     new Chart(document.getElementById("courbe_{{ loop.index }}").getContext("2d"), {
       type: "line",
       data: {
         labels: {{ compte.evolution_12_mois | map(attribute='mois') | list | tojson }},
-        datasets: [{
-          label: "Solde estimé",
-          data: {{ compte.evolution_12_mois | map(attribute='solde') | list | tojson }},
-          borderColor: "#4e79a7",
-          backgroundColor: "rgba(78,121,167,0.1)",
-          fill: true,
-          tension: 0.3
-        }]
+        datasets: [{ label: "Solde estimé", data: {{ compte.evolution_12_mois | map(attribute='solde') | list | tojson }},
+          borderColor: "#1a3a6e", backgroundColor: "rgba(26,58,110,0.08)", fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: "#1a3a6e" }]
       },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { ticks: { callback: function(v) { return v + " EUR"; } } }
-        }
-      }
+      options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: function(v){ return v + " EUR"; }, font: { family: "DM Sans" } } }, x: { ticks: { font: { family: "DM Sans", size: 11 } } } } }
     });
-  </script>
+    </script>
+  </div>
   {% endfor %}
 </div>
 {% endif %}
@@ -238,51 +262,58 @@
 {% set e = synthese.endettement %}
 {% if e %}
 <div class="section">
-  <h3>Taux d'endettement</h3>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr><td>Revenus pondérés mensuels (base bancaire)</td><td><strong>{{ e.revenus_ponderes }} EUR</strong></td></tr>
-    <tr><td>Charges retenues (loyer + impôts + crédits)</td><td>{{ e.charges_retenues }} EUR</td></tr>
-    <tr>
-      <td>Taux d'endettement</td>
-      <td class="{{ 'negatif' if e.alerte else 'positif' }}">
-        <strong>{{ e.taux_endettement }} %</strong>
-        {% if e.alerte %} — Dépasse le seuil HCSF de 35%{% endif %}
-      </td>
-    </tr>
-    <tr><td>CRD total</td><td>{{ e.crd_total }} EUR</td></tr>
-    <tr><td>Coût total restant (intérêts)</td><td>{{ e.cout_total_global }} EUR</td></tr>
-  </table>
+  <h2>&#128196; Endettement</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card {% if e.alerte %}rouge{% else %}vert{% endif %}">
+      <div class="kpi-label">Taux d'endettement</div>
+      <div class="kpi-value {% if e.alerte %}negatif{% else %}positif{% endif %}">{{ e.taux_endettement }} %</div>
+      <div class="kpi-sub">Seuil HCSF : 35% {% if e.alerte %}&#9888; Dépassé{% else %}&#10003; OK{% endif %}</div>
+    </div>
+    <div class="kpi-card bleu">
+      <div class="kpi-label">Revenus pondérés</div>
+      <div class="kpi-value">{{ e.revenus_ponderes }} EUR</div>
+      <div class="kpi-sub">Base bancaire</div>
+    </div>
+    <div class="kpi-card rouge">
+      <div class="kpi-label">CRD total</div>
+      <div class="kpi-value">{{ e.crd_total }} EUR</div>
+    </div>
+    <div class="kpi-card or">
+      <div class="kpi-label">Coût total restant</div>
+      <div class="kpi-value">{{ e.cout_total_global }} EUR</div>
+      <div class="kpi-sub">Intérêts estimés</div>
+    </div>
+  </div>
 
-  <h4>Revenus pris en compte (pondération bancaire)</h4>
+  <h3>Pondération des revenus (base bancaire)</h3>
   <table>
-    <tr><th>Type</th><th>Montant brut</th><th>Coefficient</th><th>Montant retenu</th></tr>
+    <tr><th>Type de revenu</th><th>Montant brut</th><th>Coefficient</th><th>Montant retenu</th></tr>
     {% for r in e.detail_revenus_ponderes %}
     <tr>
       <td>{{ r.type }}</td>
       <td>{{ r.montant_brut }} EUR</td>
-      <td>{{ (r.coefficient * 100) | int }} %</td>
-      <td>{{ r.montant_pondere }} EUR</td>
+      <td><span class="badge badge-bleu">{{ (r.coefficient * 100) | int }} %</span></td>
+      <td class="positif">{{ r.montant_pondere }} EUR</td>
     </tr>
     {% endfor %}
   </table>
 
-  <h4>Détail des crédits</h4>
+  <h3>Détail des crédits</h3>
   <table>
-    <tr><th>Type</th><th>Part</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Mois restants</th><th>Coût restant</th></tr>
+    <tr><th>Crédit</th><th>Part</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Mois restants</th><th>Coût restant</th></tr>
     {% for cr in e.detail_credits %}
     <tr>
-      <td>{{ cr.nom }}</td>
-      <td>{{ cr.part }} %</td>
-      <td>{{ cr.mensualite }} EUR</td>
-      <td>{{ cr.crd }} EUR</td>
-      <td>{{ cr.taux }} %</td>
-      <td>{{ cr.fin_credit }}</td>
-      <td>{{ cr.mois_restants }}</td>
-      <td>{{ cr.cout_total_restant }} EUR</td>
+      <td><strong>{{ cr.nom }}</strong></td>
+      <td><span class="badge badge-bleu">{{ cr.part }} %</span></td>
+      <td class="negatif">{{ cr.mensualite }} EUR</td>
+      <td>{{ cr.crd if cr.crd else "-" }}</td>
+      <td>{{ cr.taux if cr.taux else "-" }}</td>
+      <td>{{ cr.fin_credit if cr.fin_credit else "-" }}</td>
+      <td>{% if cr.mois_restants is not none %}<span class="badge badge-or">{{ cr.mois_restants }} mois</span>{% else %}-{% endif %}</td>
+      <td>{{ cr.cout_total_restant if cr.cout_total_restant is not none else "-" }}</td>
     </tr>
     {% else %}
-    <tr><td colspan="8">Aucun crédit</td></tr>
+    <tr><td colspan="8" style="color:var(--gris-texte); font-style:italic;">Aucun crédit</td></tr>
     {% endfor %}
   </table>
 </div>
@@ -292,85 +323,93 @@
 {% set cap = synthese.capacite_emprunt %}
 {% if cap %}
 <div class="section">
-  <h3>Capacité d'emprunt</h3>
-  <p>Revenus pondérés : <strong>{{ cap.revenus_ponderes }} EUR/mois</strong></p>
+  <h2>&#127968; Capacité d'emprunt</h2>
+  <p style="color:var(--gris-texte); margin-bottom:16px;">
+    Revenus pondérés : <strong>{{ cap.revenus_ponderes }} EUR/mois</strong> &nbsp;|&nbsp;
+    Charges actuelles (sans loyer) : <strong>{{ cap.charges_sans_loyer }} EUR</strong> &nbsp;|&nbsp;
+    Charges actuelles (avec loyer) : <strong>{{ cap.charges_avec_loyer }} EUR</strong>
+  </p>
   <table>
-    <tr>
-      <th>Durée</th>
-      <th>Taux</th>
-      <th>Source</th>
-      <th>Scénario 1 — sans loyer<br><small>Mensualité dispo / Capital</small></th>
-      <th>Scénario 2 — avec loyer<br><small>Mensualité dispo / Capital</small></th>
-    </tr>
+    <tr><th>Durée</th><th>Taux</th><th>Source</th><th>Capital (sans loyer)</th><th>Mensualité dispo</th><th>Capital (avec loyer)</th><th>Mensualité dispo</th></tr>
     {% for duree, res in cap.resultats.items() %}
     <tr>
-      <td>{{ res.nb_ans }} ans</td>
-      <td>{{ res.taux }} %</td>
+      <td><strong>{{ res.nb_ans }} ans</strong></td>
+      <td><span class="badge badge-bleu">{{ res.taux }} %</span></td>
       <td>
         {% if res.source_taux == "bdf" %}
-          BdF ({{ res.mise_a_jour_taux }})
+          <span class="badge badge-vert">BdF — {{ res.mise_a_jour_taux }}</span>
         {% else %}
-          Indicatif (fallback)
+          <span class="badge badge-or">Indicatif</span>
         {% endif %}
       </td>
-      <td>{{ res.sans_loyer.mensualite_dispo }} EUR / <strong>{{ res.sans_loyer.capital_empruntable }} EUR</strong></td>
-      <td>{{ res.avec_loyer.mensualite_dispo }} EUR / <strong>{{ res.avec_loyer.capital_empruntable }} EUR</strong></td>
+      <td class="positif"><strong>{{ res.sans_loyer.capital_empruntable }} EUR</strong></td>
+      <td>{{ res.sans_loyer.mensualite_dispo }} EUR/mois</td>
+      <td class="positif"><strong>{{ res.avec_loyer.capital_empruntable }} EUR</strong></td>
+      <td>{{ res.avec_loyer.mensualite_dispo }} EUR/mois</td>
     </tr>
     {% endfor %}
   </table>
-  <p><small>Scénario 1 : charges = impôts + crédits (primo-accédant, achat résidence principale)<br>
-  Scénario 2 : charges = impôts + crédits + loyer (investissement locatif, reste locataire)</small></p>
+  <p style="font-size:12px; color:var(--gris-texte); margin-top:10px;">
+    Scénario sans loyer : primo-accédant (charges = impôts + crédits) &nbsp;|&nbsp;
+    Scénario avec loyer : investissement locatif ou reste locataire
+  </p>
 </div>
 {% endif %}
 
-<!-- Epargne -->
+<!-- Épargne -->
 {% set ep = synthese.epargne %}
 {% if ep %}
 <div class="section">
-  <h3>Épargne</h3>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr><td>Encours total</td><td><strong>{{ ep.encours_total }} EUR</strong></td></tr>
-    <tr><td>Versements permanents mensuels</td><td>{{ ep.versements_total }} EUR</td></tr>
-    <tr><td>Nombre de produits</td><td>{{ ep.nb_produits }}</td></tr>
-  </table>
+  <h2>&#128200; Épargne</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card vert">
+      <div class="kpi-label">Encours total</div>
+      <div class="kpi-value positif">{{ ep.encours_total }} EUR</div>
+    </div>
+    <div class="kpi-card bleu">
+      <div class="kpi-label">Versements permanents</div>
+      <div class="kpi-value">{{ ep.versements_total }} EUR/mois</div>
+    </div>
+    <div class="kpi-card or">
+      <div class="kpi-label">Produits</div>
+      <div class="kpi-value">{{ ep.nb_produits }}</div>
+    </div>
+  </div>
 
-  <h4>Répartition par famille</h4>
+  <h3>Répartition par famille</h3>
   <table>
     <tr><th>Famille</th><th>Encours</th></tr>
     {% for famille, montant in ep.repartition_familles.items() %}
-    <tr><td>{{ famille }}</td><td>{{ montant }} EUR</td></tr>
+    <tr><td>{{ famille }}</td><td class="positif">{{ montant }} EUR</td></tr>
     {% else %}
-    <tr><td colspan="2">Aucune épargne</td></tr>
+    <tr><td colspan="2" style="color:var(--gris-texte); font-style:italic;">Aucune épargne</td></tr>
     {% endfor %}
   </table>
 
-  <h4>Projections par produit</h4>
+  <h3>Projections par produit</h3>
   <table>
     <tr>
       <th>Produit</th><th>Solde</th><th>Versement/mois</th><th>Taux</th>
-      {% for label in ep.projections_consolidees.keys() %}
-      <th>{{ label }}</th>
-      {% endfor %}
+      {% for label in ep.projections_consolidees.keys() %}<th>{{ label }}</th>{% endfor %}
     </tr>
     {% for p in ep.detail_produits %}
     <tr>
-      <td>{{ p.nom }}</td>
+      <td><strong>{{ p.nom }}</strong></td>
       <td>{{ p.solde }} EUR</td>
       <td>{{ p.versement }} EUR</td>
-      <td>{{ p.taux }} %</td>
+      <td><span class="badge badge-bleu">{{ p.taux }} %</span></td>
       {% for label, val in p.projections.items() %}
-      <td>{{ val }} EUR</td>
+      <td class="positif">{{ val }} EUR</td>
       {% endfor %}
     </tr>
     {% endfor %}
-    <tr>
-      <td><strong>Total</strong></td>
-      <td><strong>{{ ep.encours_total }} EUR</strong></td>
-      <td><strong>{{ ep.versements_total }} EUR</strong></td>
+    <tr style="background:var(--vert-pale); font-weight:600;">
+      <td>Total consolidé</td>
+      <td>{{ ep.encours_total }} EUR</td>
+      <td>{{ ep.versements_total }} EUR</td>
       <td></td>
       {% for label, val in ep.projections_consolidees.items() %}
-      <td><strong>{{ val }} EUR</strong></td>
+      <td class="positif">{{ val }} EUR</td>
       {% endfor %}
     </tr>
   </table>
@@ -381,96 +420,108 @@
 {% set pat = synthese.patrimoine %}
 {% if pat %}
 <div class="section">
-  <h3>Patrimoine</h3>
-  <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr><td>Patrimoine brut (valeur détenue)</td><td><strong>{{ pat.patrimoine_brut }} EUR</strong></td></tr>
-    <tr><td>CRD total associé</td><td>{{ pat.crd_total }} EUR</td></tr>
-    <tr>
-      <td>Patrimoine net (brut - CRD)</td>
-      <td class="{{ 'positif' if pat.patrimoine_net >= 0 else 'negatif' }}"><strong>{{ pat.patrimoine_net }} EUR</strong></td>
-    </tr>
-    <tr><td>Revenus locatifs mensuels</td><td>{{ pat.revenus_locatifs_mensuels }} EUR</td></tr>
-    <tr><td>Revenus locatifs annuels</td><td>{{ pat.revenus_locatifs_annuels }} EUR</td></tr>
-  </table>
+  <h2>&#127968; Patrimoine</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card bleu">
+      <div class="kpi-label">Patrimoine brut</div>
+      <div class="kpi-value">{{ pat.patrimoine_brut }} EUR</div>
+      <div class="kpi-sub">Valeur détenue</div>
+    </div>
+    <div class="kpi-card rouge">
+      <div class="kpi-label">CRD associé</div>
+      <div class="kpi-value">{{ pat.crd_total }} EUR</div>
+    </div>
+    <div class="kpi-card {% if pat.patrimoine_net >= 0 %}vert{% else %}rouge{% endif %}">
+      <div class="kpi-label">Patrimoine net</div>
+      <div class="kpi-value {% if pat.patrimoine_net >= 0 %}positif{% else %}negatif{% endif %}">{{ pat.patrimoine_net }} EUR</div>
+      <div class="kpi-sub">Brut - CRD</div>
+    </div>
+    <div class="kpi-card or">
+      <div class="kpi-label">Revenus locatifs</div>
+      <div class="kpi-value">{{ pat.revenus_locatifs_mensuels }} EUR/mois</div>
+      <div class="kpi-sub">{{ pat.revenus_locatifs_annuels }} EUR/an</div>
+    </div>
+  </div>
 
-  <h4>Répartition</h4>
+  {% if pat.repartition %}
+  <h3>Répartition</h3>
   <table>
     <tr><th>Famille</th><th>Valeur détenue</th></tr>
     {% for famille, montant in pat.repartition.items() %}
     <tr><td>{{ famille }}</td><td>{{ montant }} EUR</td></tr>
     {% endfor %}
   </table>
+  {% endif %}
 
-  <h4>Détail des biens</h4>
+  <h3>Détail des biens</h3>
   <table>
-    <tr>
-      <th>Nom</th><th>Type</th><th>Valeur</th><th>Part</th><th>Valeur détenue</th>
-      <th>CRD</th><th>Valeur nette</th><th>Revenu annuel</th>
-      <th>Rendement brut</th><th>Effort immobilier</th>
-    </tr>
+    <tr><th>Nom</th><th>Type</th><th>Valeur</th><th>Part</th><th>Val. détenue</th><th>CRD</th><th>Val. nette</th><th>Rev. annuel</th><th>Rendement</th><th>Effort immo</th></tr>
     {% for bien in pat.detail %}
     <tr>
-      <td>{{ bien.nom }}</td>
-      <td>{{ bien.type }}</td>
+      <td><strong>{{ bien.nom }}</strong></td>
+      <td><span class="badge badge-bleu">{{ bien.type }}</span></td>
       <td>{{ bien.valeur }} EUR</td>
       <td>{{ bien.part }} %</td>
       <td>{{ bien.valeur_detenue }} EUR</td>
       <td>{{ bien.crd }} EUR</td>
-      <td>{{ bien.valeur_nette }} EUR</td>
+      <td class="{% if bien.valeur_nette >= 0 %}positif{% else %}negatif{% endif %}">{{ bien.valeur_nette }} EUR</td>
       <td>{{ bien.revenu_annuel }} EUR</td>
-      <td>{{ bien.rendement_brut }} %</td>
-      <td class="{{ 'negatif' if bien.effort_immobilier > 0 else 'positif' }}">
-        {{ bien.effort_immobilier }} EUR/mois
-      </td>
+      <td>{% if bien.rendement_brut > 0 %}<span class="badge badge-vert">{{ bien.rendement_brut }} %</span>{% else %}-{% endif %}</td>
+      <td class="{% if bien.effort_immobilier > 0 %}negatif{% else %}positif{% endif %}">{{ bien.effort_immobilier }} EUR/mois</td>
     </tr>
     {% else %}
-    <tr><td colspan="10">Aucun bien</td></tr>
+    <tr><td colspan="10" style="color:var(--gris-texte); font-style:italic;">Aucun bien</td></tr>
     {% endfor %}
   </table>
 </div>
 {% endif %}
 
-<!-- Foyer (multi-clients uniquement) -->
+<!-- Foyer -->
 {% if synthese.foyer %}
 {% set f = synthese.foyer %}
-<div class="section">
-  <h3>Vue foyer — {{ f.noms | join(" & ") }}</h3>
+<div class="section" style="border-left: 4px solid var(--or);">
+  <h2>&#128106; Vue foyer — {{ f.noms | join(" & ") }}</h2>
+  <div class="kpi-grid">
+    <div class="kpi-card vert">
+      <div class="kpi-label">Revenus foyer</div>
+      <div class="kpi-value positif">{{ f.total_revenus_foyer }} EUR</div>
+    </div>
+    <div class="kpi-card rouge">
+      <div class="kpi-label">Charges foyer</div>
+      <div class="kpi-value">{{ f.total_mensualites_foyer }} EUR</div>
+    </div>
+    <div class="kpi-card {% if f.alerte_endettement %}rouge{% else %}vert{% endif %}">
+      <div class="kpi-label">Taux endettement foyer</div>
+      <div class="kpi-value {% if f.alerte_endettement %}negatif{% else %}positif{% endif %}">{{ f.taux_endettement_foyer }} %</div>
+    </div>
+    <div class="kpi-card {% if f.solde_foyer >= 0 %}vert{% else %}rouge{% endif %}">
+      <div class="kpi-label">Solde foyer</div>
+      <div class="kpi-value {% if f.solde_foyer >= 0 %}positif{% else %}negatif{% endif %}">{{ f.solde_foyer }} EUR</div>
+    </div>
+  </div>
+
+  <h3>Revenus par client</h3>
   <table>
-    <tr><th>Indicateur</th><th>Montant</th></tr>
-    <tr><td>Revenus totaux du foyer</td><td><strong>{{ f.total_revenus_foyer }} EUR</strong></td></tr>
+    <tr><th>Client</th><th>Revenus mensuels</th></tr>
     {% for nom, rev in f.revenus_par_client.items() %}
-    <tr><td>&nbsp;&nbsp;Dont {{ nom }}</td><td>{{ rev }} EUR</td></tr>
+    <tr><td>{{ nom }}</td><td class="positif">{{ rev }} EUR</td></tr>
     {% endfor %}
-    <tr><td>Dépenses du foyer</td><td>{{ f.total_depenses_foyer }} EUR</td></tr>
-    <tr><td>Mensualités crédits foyer</td><td>{{ f.total_mensualites_foyer }} EUR</td></tr>
-    <tr>
-      <td>Taux d'endettement foyer</td>
-      <td class="{{ 'negatif' if f.alerte_endettement else 'positif' }}">
-        {{ f.taux_endettement_foyer }} %{% if f.alerte_endettement %} — Dépasse 35%{% endif %}
-      </td>
-    </tr>
-    <tr>
-      <td>Solde foyer</td>
-      <td class="{{ 'positif' if f.solde_foyer >= 0 else 'negatif' }}">{{ f.solde_foyer }} EUR</td>
-    </tr>
-    <tr><td>Encours épargne foyer</td><td>{{ f.encours_epargne_foyer }} EUR</td></tr>
-    <tr><td>Patrimoine brut foyer</td><td>{{ f.patrimoine_brut_foyer }} EUR</td></tr>
   </table>
 
-  <h4>Contribution aux crédits par co-emprunteur</h4>
+  <h3>Contribution aux crédits</h3>
   <table>
-    <tr><th>Emprunteur</th><th>Mensualité totale supportée</th></tr>
+    <tr><th>Emprunteur</th><th>Mensualité supportée</th></tr>
     {% for nom, contrib in f.contributions_credits.items() %}
-    <tr><td>{{ nom }}</td><td>{{ contrib }} EUR</td></tr>
+    <tr><td>{{ nom }}</td><td class="negatif">{{ contrib }} EUR/mois</td></tr>
     {% endfor %}
   </table>
 </div>
 {% endif %}
 
-<!-- Navigation -->
-<div class="section">
-  <a href="/saisie">Retour à la saisie</a>
+<!-- Retour -->
+<div class="section" style="display:flex; justify-content:space-between; align-items:center; padding:16px 24px;">
+  <a href="/saisie?etape=7" class="btn-nav">&#8592; Retour à la synthèse</a>
+  <a href="/export_csv" class="btn-primary">&#8681; Télécharger le CSV</a>
 </div>
 
 {% endblock %}

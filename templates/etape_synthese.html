@@ -1,80 +1,118 @@
 {% extends "base.html" %}
-
 {% block content %}
 
-<div class="section">
-  <h2>Étape 7 — Synthèse et actions</h2>
-  <p>Votre saisie est complète. Accédez aux analyses ou sauvegardez vos données.</p>
+<!-- Titre de l'étape -->
+<div class="section" style="background: linear-gradient(135deg, var(--bleu) 0%, var(--bleu-clair) 100%); color:white; border:none; padding:32px;">
+  <h2 style="color:white; border:none; font-size:24px; margin-bottom:6px;">&#127919; Synthèse de votre étude</h2>
+  <p style="opacity:0.85; font-size:15px;">Tout est saisi. Accédez à vos analyses ou téléchargez votre sauvegarde.</p>
 </div>
 
-<!-- Récapitulatif rapide -->
+<!-- Récapitulatif -->
 <div class="section">
-  <h3>Récapitulatif de la saisie</h3>
-  <table>
-    <tr><th>Rubrique</th><th>Éléments saisis</th></tr>
-    <tr><td>Clients</td><td>{{ clients | length }}</td></tr>
-    <tr><td>Comptes</td><td>{{ comptes | length }}</td></tr>
-    <tr><td>Revenus</td><td>{{ revenus | length }}</td></tr>
-    <tr><td>Dépenses</td><td>{{ depenses | length }}</td></tr>
-    <tr><td>Crédits</td><td>{{ credits | length }}</td></tr>
-    <tr><td>Produits d'épargne</td><td>{{ epargnes | length }}</td></tr>
-    <tr><td>Biens patrimoniaux</td><td>{{ patrimoines | length }}</td></tr>
-  </table>
+  <h2>&#128203; Récapitulatif de la saisie</h2>
+  <div class="recap-grid">
+    <div class="recap-card">
+      <div class="rc-nombre">{{ clients | length }}</div>
+      <div class="rc-label">Client(s)</div>
+    </div>
+    <div class="recap-card">
+      <div class="rc-nombre">{{ comptes | length }}</div>
+      <div class="rc-label">Compte(s)</div>
+    </div>
+    <div class="recap-card">
+      <div class="rc-nombre">{{ revenus | length }}</div>
+      <div class="rc-label">Revenu(s)</div>
+    </div>
+    <div class="recap-card">
+      <div class="rc-nombre">{{ depenses | length }}</div>
+      <div class="rc-label">Dépense(s)</div>
+    </div>
+    <div class="recap-card">
+      <div class="rc-nombre">{{ credits | length }}</div>
+      <div class="rc-label">Crédit(s)</div>
+    </div>
+    <div class="recap-card">
+      <div class="rc-nombre">{{ epargnes | length }}</div>
+      <div class="rc-label">Épargne(s)</div>
+    </div>
+    <div class="recap-card">
+      <div class="rc-nombre">{{ patrimoines | length }}</div>
+      <div class="rc-label">Bien(s)</div>
+    </div>
+  </div>
 </div>
 
 <!-- Projections par compte -->
 <div class="section">
-  <h3>Projections de solde</h3>
+  <h2>&#127968; Projections de solde par compte</h2>
   {% if comptes %}
   <table>
-    <tr><th>Compte</th><th>Propriétaire(s)</th><th>Solde actuel</th><th>Voir la projection</th></tr>
+    <tr><th>Compte</th><th>Banque</th><th>Propriétaire(s)</th><th>Solde actuel</th><th>Action</th></tr>
     {% for comp in comptes %}
     <tr>
-      <td>{{ comp.nom_compte }}</td>
-      <td>{{ comp.proprietaires }}</td>
-      <td>{{ comp.solde_initial }} EUR</td>
-      <td><a href="/projection/{{ comp.id }}" class="btn-nav">Projeter</a></td>
+      <td><strong>{{ comp.nom_compte }}</strong></td>
+      <td>{{ comp.banque }}</td>
+      <td>
+        {{ comp.proprietaires }}
+        {% if comp.est_joint %}<span class="badge badge-or">Joint</span>{% endif %}
+      </td>
+      <td><strong>{{ comp.solde_initial }} EUR</strong></td>
+      <td><a href="/projection/{{ comp.id }}" class="btn-nav">Voir la projection</a></td>
     </tr>
     {% endfor %}
   </table>
   {% else %}
-  <p>Aucun compte enregistré.</p>
+  <p style="color:var(--gris-texte); font-style:italic;">Aucun compte enregistré.</p>
   {% endif %}
 </div>
 
 <!-- Statistiques -->
 <div class="section">
-  <h3>Statistiques budgétaires</h3>
+  <h2>&#128202; Statistiques budgétaires</h2>
+  <p style="color:var(--gris-texte); margin-bottom:16px;">Sélectionnez le ou les clients à analyser, puis choisissez la période.</p>
   <form method="GET" action="/stats">
-    <p>Sélectionnez le(s) client(s) à analyser :</p>
-    {% for c in clients %}
-      <input type="checkbox" name="clients" value="{{ c.id }}" id="stat_c_{{ c.id }}">
-      <label for="stat_c_{{ c.id }}">{{ c.nom }}</label>
-    {% endfor %}
-    <br><br>
-    Mois :
-    <select name="mois">
-      {% for num, nom in mois_noms.items() %}
-        <option value="{{ num }}" {% if num == mois_actuel %}selected{% endif %}>{{ nom }}</option>
-      {% endfor %}
-    </select>
-    Année : <input type="number" name="annee" value="{{ annee_actuelle }}" min="2000" max="2100" style="width:80px">
-    <br><br>
-    <button type="submit" class="btn-primary">Voir les statistiques complètes</button>
+    <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end;">
+      <div>
+        <label>Client(s)</label><br>
+        {% for c in clients %}
+          <label style="display:inline-flex; align-items:center; gap:6px; margin-right:16px; font-weight:400;">
+            <input type="checkbox" name="clients" value="{{ c.id }}">
+            {{ c.nom }}
+          </label>
+        {% else %}
+          <span style="color:var(--gris-texte); font-style:italic;">Aucun client</span>
+        {% endfor %}
+      </div>
+      <div>
+        <label>Mois</label>
+        <select name="mois" style="margin-bottom:0;">
+          {% for num, nom in mois_noms.items() %}
+            <option value="{{ num }}" {% if num == mois_actuel %}selected{% endif %}>{{ nom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Année</label>
+        <input type="number" name="annee" value="{{ annee_actuelle }}" min="2000" max="2100" class="small" style="margin-bottom:0;">
+      </div>
+      <div>
+        <button type="submit" class="btn-primary">Voir les statistiques</button>
+      </div>
+    </div>
   </form>
 </div>
 
 <!-- Sauvegarde -->
 <div class="section">
-  <h3>Sauvegarde</h3>
-  <p>Téléchargez vos données pour les recharger lors d'une prochaine session.</p>
-  <a href="/export_csv" class="btn-nav">Télécharger le CSV</a>
+  <h2>&#128190; Sauvegarde</h2>
+  <p style="color:var(--gris-texte); margin-bottom:16px;">Téléchargez vos données pour les recharger lors d'une prochaine session.</p>
+  <a href="/export_csv" class="btn-primary">&#8681; Télécharger le CSV</a>
 </div>
 
-<!-- Modifier les données -->
+<!-- Modifier -->
 <div class="section">
-  <h3>Modifier les données</h3>
-  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+  <h2>&#9998; Modifier les données</h2>
+  <div class="actions-grid">
     <a href="/saisie?etape=1" class="btn-nav">Clients & Comptes</a>
     <a href="/saisie?etape=2" class="btn-nav">Revenus</a>
     <a href="/saisie?etape=3" class="btn-nav">Dépenses</a>
