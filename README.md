@@ -27,6 +27,7 @@ finance_app/
 
 ├── app.py                    # point d'entrée appli, routes flask
 ├── config.py                 # paramètres globaux (notamment gestion de taux de crédit)
+├── session_store.py          # Stockage en mémoire serveur (temporaire)
 ├── README.md                 # Description projet
 ├── requirements.txt          # à installer
 ├── .gitignore                # à masquer

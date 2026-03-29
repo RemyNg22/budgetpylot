@@ -21,7 +21,6 @@ class Client:
         self.patrimoines: List[Patrimoine] = []
 
 
-
     # Ajout des éléments
     def ajouter_revenu(self, revenu: Revenu):
         if revenu.est_revenu_principal:
@@ -35,6 +34,10 @@ class Client:
 
     def ajouter_credit(self, credit: Credit, part: float = 1.0):
         credit.ajouter_emprunteur(self, part)
+        self.credits.append(credit)
+
+    def attacher_credit(self, credit: Credit):
+        """Attache un crédit déjà configuré (emprunteurs et parts déjà enregistrés) sans modifier les parts."""
         self.credits.append(credit)
 
     def ajouter_epargne(self, epargne: Epargne):
@@ -61,7 +64,6 @@ class Client:
  
 
     # Revenus / Dépenses agrégés
- 
     def revenus_du_mois(self, mois: int) -> float:
         return sum(r.montant_pour_mois(mois) for r in self.revenus)
  
@@ -83,7 +85,6 @@ class Client:
  
    
     # Projection
- 
     @staticmethod
     def projeter_solde_compte(
         compte: Compte,
@@ -185,7 +186,6 @@ class Client:
         aujourd_hui: datetime
     ) -> float:
         """Solde estimé au dernier jour du mois en cours."""
-
         date_cible = Client._dernier_jour_mois(aujourd_hui.year, aujourd_hui.month)
         return Client.projeter_solde_compte(
             compte, compte_id, proprietaires, aujourd_hui, date_cible
@@ -203,7 +203,6 @@ class Client:
         parmi tous les propriétaires.
         Retourne (solde, revenu_principal, date_salaire) ou (None, None, None).
         """
-
         rev = None
         for client in proprietaires:
             rev = client.revenu_principal()

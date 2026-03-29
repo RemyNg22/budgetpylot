@@ -200,8 +200,8 @@ def importer_csv(
     comptes.clear()
 
     # Index temporaires pour reconstruire les relations
-    credits_index = {}
-    revenus_index = {}
+    credits_index = {}   # item_id -> objet Credit
+    revenus_index = {}   # item_id -> objet Revenu
     next_item_id = 0
 
     reader = csv.reader(io.StringIO(contenu))
@@ -352,8 +352,7 @@ def importer_csv(
         cr = credits_index[credit_id]
         client = clients[client_id]
         cr.ajouter_emprunteur(client, part)
-        # On ajoute le crédit au client sans rappeler ajouter_emprunteur
-        client.credits.append(cr)
+        client.attacher_credit(cr)
 
     # Passe 7 : épargnes
     for row in rows:
