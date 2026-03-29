@@ -21,13 +21,21 @@ function verifierRevenuIndivision() {
 
 <div class="section">
   <h2>Étape 2 — Revenus</h2>
-  <p>Saisissez tous les revenus de chaque client.</p>
+  <p>Saisissez tous les revenus de chaque personne. Pensez à bien catégoriser le revenu. 
+    Vous pouvez aussi saisir un remboursement ou un autre revenu unique, qui ne sera compté que 
+    dans les projections de solde (et non dans les statistiques).
+  </p>
+  <br>
+  <p><strong>⚠️ Un revenu est lié à une personne. Si vous partagez un revenu entre plusieurs personnes, 
+    veuillez mettre la part de ce revenu pour chaque personne. </strong> 
+    <br>(ex : vous percevez un revenu locatif de 1000€, vous vous partagez 
+    le revenu à 2, mettez pour chaque personne 500€ de revenu locatif)</p>
 </div>
 
 <div class="section">
   <h3>Ajouter un revenu</h3>
   <form method="POST" action="/revenu?redirect_etape=2">
-    Client :
+    Personne :
     <select name="id_client">
       {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
     </select><br>
@@ -64,7 +72,7 @@ function verifierRevenuIndivision() {
 
   <h3>Revenus enregistrés</h3>
   <table>
-    <tr><th>Client</th><th>Compte</th><th>Type</th><th>Montant</th><th>Périodicité</th><th>Jour</th><th>Mois</th><th>Principal</th><th>Action</th></tr>
+    <tr><th>Personne</th><th>Compte</th><th>Type</th><th>Montant</th><th>Périodicité</th><th>Jour</th><th>Mois</th><th>Principal</th><th>Action</th></tr>
     {% for r in revenus %}
     <tr>
       <td>{{ client_names.get(r.id_client, "?") }}</td>

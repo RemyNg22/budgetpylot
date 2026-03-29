@@ -2,13 +2,20 @@
 {% block content %}
 
 <div class="section">
-  <h2>Étape 1 — Clients et comptes</h2>
-  <p>Renseignez les personnes concernées par cette étude et leurs comptes bancaires.</p>
+  <h2>Étape 1 — Personnes et comptes</h2>
+  <p>Renseignez les personnes concernées par cette étude et leurs comptes bancaires. 
+    Vous pouvez entrer autant de personnes que vous voulez pour faire un budget et des statistiques 
+    pour tout votre foyer par exemple.
+  </p>
+  <br>
+  <p><strong>⚠️ Pour un compte joint ou en indivision, pensez à bien cocher les différentes personnes 
+    liées au compte.
+  </strong></p>
 </div>
 
 <!-- Clients -->
 <div class="section">
-  <h3>Clients</h3>
+  <h3>Personnes</h3>
   <form method="POST" action="/client?redirect_etape=1">
     Nom : <input type="text" name="nom" required>
     <button type="submit">Ajouter</button>
@@ -22,7 +29,7 @@
       <td><a href="/supprimer_client/{{ c.id }}?redirect_etape=1">Supprimer</a></td>
     </tr>
     {% else %}
-    <tr><td colspan="2">Aucun client</td></tr>
+    <tr><td colspan="2">Aucune personne</td></tr>
     {% endfor %}
   </table>
 </div>

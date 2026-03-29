@@ -13,7 +13,7 @@
   <div class="recap-grid">
     <div class="recap-card">
       <div class="rc-nombre">{{ clients | length }}</div>
-      <div class="rc-label">Client(s)</div>
+      <div class="rc-label">Personne(s)</div>
     </div>
     <div class="recap-card">
       <div class="rc-nombre">{{ comptes | length }}</div>
@@ -73,7 +73,7 @@
   <form method="GET" action="/stats">
     <div style="display:flex; flex-wrap:wrap; gap:20px; align-items:flex-end;">
       <div>
-        <label>Client(s)</label><br>
+        <label>Personne(s)</label><br>
         {% for c in clients %}
           <label style="display:inline-flex; align-items:center; gap:6px; margin-right:16px; font-weight:400;">
             <input type="checkbox" name="clients" value="{{ c.id }}">
@@ -113,7 +113,7 @@
 <div class="section">
   <h2>&#9998; Modifier les données</h2>
   <div class="actions-grid">
-    <a href="/saisie?etape=1" class="btn-nav">Clients & Comptes</a>
+    <a href="/saisie?etape=1" class="btn-nav">Personnes & Comptes</a>
     <a href="/saisie?etape=2" class="btn-nav">Revenus</a>
     <a href="/saisie?etape=3" class="btn-nav">Dépenses</a>
     <a href="/saisie?etape=4" class="btn-nav">Crédits</a>

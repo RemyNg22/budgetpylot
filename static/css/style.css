@@ -597,9 +597,7 @@ details > *:not(summary) {
   .recap-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* =====================================================
-   HEADER enrichi
-   ===================================================== */
+/*  HEADER enrichi */
 header {
   display: flex;
   align-items: center;

@@ -31,7 +31,7 @@ MOIS_NOMS = {
     9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
 }
 ETAPES = [{"num": 0, "titre": "Accueil", "template": "etape_accueil.html"},
-    {"num": 1, "titre": "Clients & Comptes", "template": "etape_clients_comptes.html"},
+    {"num": 1, "titre": "Personnes & Comptes", "template": "etape_clients_comptes.html"},
     {"num": 2, "titre": "Revenus", "template": "etape_revenus.html"},
     {"num": 3, "titre": "Dépenses","template": "etape_depenses.html"},
     {"num": 4, "titre": "Crédits", "template": "etape_credits.html"},

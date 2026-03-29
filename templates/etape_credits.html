@@ -29,7 +29,10 @@ function onChangeEmprunteur(cb) {
 
 <div class="section">
   <h2>Étape 4 — Crédits</h2>
-  <p>Saisissez les crédits en cours. Seuls la mensualité, le jour d'échéance et l'emprunteur sont obligatoires.</p>
+  <p>Saisissez les crédits en cours. <strong>Seuls la mensualité, le jour d'échéance et l'emprunteur sont obligatoires. </strong>
+    <br>
+    Cependant, en renseignant les informations complémentaires, vous aurez des statistiques supplémentaires (tel que le coût restant de votre crédit).
+  </p>
 </div>
 
 <div class="section">
@@ -64,7 +67,7 @@ function onChangeEmprunteur(cb) {
 
   <h3>Crédits enregistrés</h3>
   <table>
-    <tr><th>Client</th><th>Type</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Action</th></tr>
+    <tr><th>Personne</th><th>Type</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Action</th></tr>
     {% for c in credits %}
     <tr>
       <td>{{ client_names.get(c.id_client, "?") }}</td>
