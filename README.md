@@ -2,28 +2,89 @@
 
 BudgetPylot est un simulateur bancaire personnel développé en **Python** avec une interface web en **HTML/Flask**. Il permet de suivre son budget, ses crédits, ses épargnes et de faire des prévisions financières sur plusieurs mois. Il permet aussi d'avoir des statistiques personnalisées et bancaires telles que votre taux d'endettement, votre capacité d'emprunt sur 20 et 25 ans, et bien d'autres choses.
 
-**Le lien du site web BudgetPylot** : [https://budgetpylot.com/](https://bugetpylot.com)
+**Le lien du site web BudgetPylot**
+
+[https://budgetpylot.com/](https://bugetpylot.com)
+
+
+---
+
+## Objectif
+
+Fournir une vision claire et complète de la situation financière d’un utilisateur ou d’un foyer :
+
+- Analyse des revenus et dépenses
+- Suivi des crédits et de l’endettement
+- Pilotage de l’épargne
+- Évaluation du patrimoine
+- Simulations financières avancées
+
 ---
 
 ## Fonctionnalités
 
-- Saisie du solde initial, des revenus et des dépenses (fixes et variables)
-- Gestion de plusieurs crédits (capital, taux, durée, mensualité)
-- Gestion de plusieurs épargnes (montant initial, versements, taux)
-- Calcul automatique du reste à vivre
-- Calcul du taux d’endettement
-- Simulation de capacité d’emprunt
-- Simulation de capacité d’épargne
-- Prévisions sur N mois (solde, épargne, amortissement des crédits)
-- Visualisation de statistiques et graphiques financiers
-- Import / export des données via CSV
+**Analyse des revenus et dépenses**
+
+Pour chaque personne sélectionnée :
+
+- Revenus totaux mensuels
+- Revenu mensuel moyen
+- Revenu annuel
+- Dépenses mensuelles :
+    - fixes
+    - variables
+    - uniques
+- Répartition des dépenses par catégorie
+- Solde mensuel (revenus - dépenses - crédits)
+- Taux d’épargne
+- Reste à vivre
+
+**Suivi des comptes et trésorerie**
+
+- Solde actuel par compte
+- Solde estimé en fin de mois
+- Solde estimé au prochain salaire
+- Solde estimé à une date personnalisée
+- Projection d’évolution du solde sur 12 mois (courbe)
+
+**Analyse des crédits**
+
+- Taux d’endettement global (avec seuil réglementaire de 35%)
+- Capacité d’emprunt :
+    - sur 25 ans
+    - sur 20 ans
+- Capital restant dû (CRD) total
+- Coût total restant (intérêts)
+- Durée restante par crédit
+
+**Gestion de l'épargne**
+
+- Encours total d’épargne
+- Projection d’épargne :
+    - à 1 an
+    - à durée personnalisée
+- Capacité d’épargne mensuelle
+- Répartition par type de produit
+
+**Analyse du patrimoine**
+
+- Patrimoine brut total
+- Patrimoine net (brut - dettes)
+- Rendement locatif brut
+- Effort d’épargne immobilier
+
+**Outils complémentaires**
+
+- Visualisation graphique des données financières
+- Simulations et projections sur plusieurs périodes
+- Import / export des données (CSV)
 
 ---
 
 ## Architecture du projet
 
 ```text
-finance_app/
+budgetpylot/
 
 ├── app.py                    # point d'entrée appli, routes flask
 ├── config.py                 # paramètres globaux (notamment gestion de taux de crédit)
@@ -73,3 +134,28 @@ finance_app/
         └── logobudgetpylot.png
 
 ```
+
+---
+
+## Lancement du projet
+
+**1. Installation**
+
+```
+pip install -r requirements.txt
+```
+
+**2. Lancement de l'application**
+
+```
+python app.py
+```
+
+## Logique métier
+
+L’application repose sur une séparation claire :
+
+- models/ : structure des données
+- services/ : calculs financiers et règles métier
+- templates/ : rendu utilisateur
+- data/ : import export csv (CSV)
