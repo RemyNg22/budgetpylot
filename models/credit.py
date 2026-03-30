@@ -24,6 +24,23 @@ class Credit:
                  compte=None,
                  id_compte: int | None = None,
                  deja_preleve: bool = False):
+        """
+        Représente un crédit avec ses caractéristiques et ses emprunteurs.
+
+        Attributs:
+            type_de_credit (int): identifiant du type de crédit.
+            mensualite (float): montant de la mensualité totale.
+            jour_echeance (int): jour du mois de l'échéance (1-28).
+            capital_emprunte (float | None): capital initial emprunté.
+            crd (float | None): capital restant dû.
+            taux (float | None): taux du crédit.
+            duree_initiale (int | None): durée initiale en mois.
+            fin_credit (datetime | None): date de fin du crédit.
+            compte: compte associé au crédit.
+            id_compte (int | None): ID du compte associé.
+            deja_preleve (bool): indique si la mensualité du mois courant a déjà été prélevée.
+            emprunteur (dict): dictionnaire {Client: part} indiquant la part de chaque emprunteur.
+        """
 
         if type_de_credit not in self.REGLES_CREDIT:
             raise ValueError("Type de crédit invalide")
@@ -91,15 +108,29 @@ class Credit:
         self.emprunteur[client] = part
  
     def mensualite_client(self, client) -> float:
+        """
+        Retourne la mensualité du crédit à la charge du client.
+
+        Args:
+            client: objet Client associé au crédit.
+
+        Returns:
+            float: montant mensuel pour le client.
+
+        Raises:
+            ValueError: si le client n'est pas associé au crédit.
+        """
         if client not in self.emprunteur:
             raise ValueError("Ce client n'est pas associé à ce crédit")
         
         return self.mensualite * self.emprunteur[client]
  
     def nombre_emprunteurs(self) -> int:
+        """Retourne le nombre d'emprunteurs attachés au crédit."""
         return len(self.emprunteur)
     
     def pourcentages_emprunteurs(self) -> dict:
+        """Retourne un dictionnaire {nom_client: part} des emprunteurs."""
         return {c.nom: p for c, p in self.emprunteur.items()}
 
     @property

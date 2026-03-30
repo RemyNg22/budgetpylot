@@ -16,7 +16,17 @@ class Patrimoine:
 
     def __init__(self, type_patrimoine: str, nom: str, valeur: float, part: float = 100, 
                  credits: list | None = None, revenus=None):
+        """
+        Représente un bien patrimonial d'un client.
 
+        Attributes:
+            type_patrimoine (str): type du bien (ex: Résidence principale, Terrain, Parking/Garage, etc.).
+            nom (str): nom ou description du bien.
+            valeur (float): valeur totale du bien en euros.
+            part (float): pourcentage détenu (0-100).
+            credits (list[Credit]): crédits associés au bien.
+            revenus (list[Revenu]): revenus générés par le bien (ex: loyers).
+        """
         if type_patrimoine not in self.TYPE_PATRIMOINE:
             raise ValueError("Type de patrimoine invalide")
 
@@ -35,9 +45,21 @@ class Patrimoine:
  
     @property
     def valeur_detention(self) -> float:
+        """
+        Calcule la valeur détenue du patrimoine selon la part.
+
+        Returns:
+            float: valeur réelle détenue du bien.
+        """
         return self.valeur * (self.part / 100)
  
     def modifier_valeur(self, nouvelle_valeur: float):
+        """
+        Modifie la valeur totale du bien.
+
+        Args:
+            nouvelle_valeur (float): nouvelle valeur du bien, doit être positive.
+        """
         if nouvelle_valeur < 0:
             raise ValueError("La valeur doit être positive")
         self.valeur = float(nouvelle_valeur)
@@ -58,10 +80,22 @@ class Patrimoine:
  
     @property
     def revenu(self):
+        """
+        Retourne le premier revenu associé au bien, s'il existe.
+
+        Returns:
+            Revenu | None: revenu lié au bien ou None si aucun.
+        """
         return self.revenus[0] if self.revenus else None
  
     @property
     def credit(self):
+        """
+        Retourne le premier crédit associé au bien, s'il existe.
+
+        Returns:
+            Credit | None: crédit lié au bien ou None si aucun.
+        """
         return self.credits[0] if self.credits else None
  
     def __repr__(self):

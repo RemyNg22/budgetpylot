@@ -10,6 +10,18 @@ import calendar
 
 
 class Client:
+    """
+    Représente un client avec ses comptes, revenus, dépenses, crédits, épargnes et patrimoines.
+
+    Attributs:
+        nom (str): nom du client.
+        revenus (List[Revenu]): liste des revenus.
+        depenses (List[Depense]): liste des dépenses.
+        credits (List[Credit]): liste des crédits.
+        epargnes (List[Epargne]): liste des épargnes.
+        comptes (List[Compte]): liste des comptes bancaires.
+        patrimoines (List[Patrimoine]): liste des patrimoines.
+    """
 
     def __init__(self, nom: str):
         self.nom = nom
@@ -23,6 +35,10 @@ class Client:
 
     # Ajout des éléments
     def ajouter_revenu(self, revenu: Revenu):
+        """
+        Ajoute un revenu au client.
+        Si le revenu est principal, les autres revenus sont marqués comme non principaux.
+        """
         if revenu.est_revenu_principal:
             for r in self.revenus:
                 r.est_revenu_principal = False
@@ -33,6 +49,7 @@ class Client:
         self.depenses.append(depense)
 
     def ajouter_credit(self, credit: Credit, part: float = 1.0):
+        """Ajoute un crédit au client et définit la part de ce client dans le crédit."""
         credit.ajouter_emprunteur(self, part)
         self.credits.append(credit)
 
@@ -59,15 +76,18 @@ class Client:
  
     @staticmethod
     def _dernier_jour_mois(annee: int, mois: int) -> datetime:
+        """Retourne le dernier instant du mois spécifié (23:59:59)."""
         dernier = calendar.monthrange(annee, mois)[1]
         return datetime(annee, mois, dernier, 23, 59, 59)
  
 
     # Revenus / Dépenses agrégés
     def revenus_du_mois(self, mois: int) -> float:
+        """Calcule le total des revenus du client pour le mois donné."""
         return sum(r.montant_pour_mois(mois) for r in self.revenus)
  
     def total_depenses_du_mois(self, mois: int, type_depense: str | None = None) -> float:
+        """Calcule le total des dépenses applicables pour le mois, filtré par type si précisé."""
         total = 0.0
         for dep in self.depenses:
             if not dep.est_a_appliquer(mois):
@@ -171,7 +191,7 @@ class Client:
         aujourd_hui: datetime,
         date_cible: datetime
     ) -> float:
-        """Façade d'instance pour un compte individuel."""
+        """Projection de solde pour un compte individuel (façade instance)."""
         return Client.projeter_solde_compte(
             compte, compte_id, [self], aujourd_hui, date_cible
         )

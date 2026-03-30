@@ -1,8 +1,8 @@
-# Simulateur Bancaire Personnel
+# BudgetPylot : Simulateur Bancaire Personnel
 
-Ce projet est un simulateur bancaire personnel développé en **Python** avec une interface web en **HTML/Flask**. Il permet de suivre son budget, ses crédits, ses épargnes et de faire des prévisions financières sur plusieurs mois.
+BudgetPylot est un simulateur bancaire personnel développé en **Python** avec une interface web en **HTML/Flask**. Il permet de suivre son budget, ses crédits, ses épargnes et de faire des prévisions financières sur plusieurs mois. Il permet aussi d'avoir des statistiques personnalisées et bancaires telles que votre taux d'endettement, votre capacité d'emprunt sur 20 et 25 ans, et bien d'autres choses.
 
-**Le projet est en cours de développement !**
+**Le lien du site web BudgetPylot** : [https://budgetpylot.com/](https://bugetpylot.com)
 ---
 
 ## Fonctionnalités
@@ -62,10 +62,14 @@ finance_app/
 │   ├── etape_revenus.html
 │   └── etape_synthese.html
 |
+|
+├── notebook/                     # notebook explicatif POO
+│   └── notebook_budgetpylot.ipynb
+|
 └── static/                   # visuel
     ├── css
     │   └── style.css
-    └── js
-        └── charts.js
+    └── img
+        └── logobudgetpylot.png
 
 ```

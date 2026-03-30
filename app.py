@@ -43,6 +43,12 @@ NB_ETAPES = len(ETAPES)
 
 # Utilitaires
 def sd():
+    """
+    Retourne les données de session actuelles.
+    
+    Returns:
+        SessionStore: objet contenant clients, comptes et identifiants.
+    """
     return get_session_data()
 
 
@@ -71,12 +77,18 @@ def parse_str(value, default=""):
 
 
 def safe_redirect(msg=None):
+    """
+    Redirige vers une étape de saisie avec éventuellement un message flash.
+    """
     if msg:
         flash(msg)
     etape = parse_int(request.args.get("redirect_etape"), 1)
     return redirect(f"/saisie?etape={etape}")
 
 def redirect_etape(default: int = 1):
+    """
+    Redirection simple vers une étape spécifique de saisie.
+    """
     etape = parse_int(request.args.get("redirect_etape"), default)
     return redirect(f"/saisie?etape={etape}")
 
@@ -84,6 +96,7 @@ def redirect_etape(default: int = 1):
 # DataFrames
 
 def generate_df():
+    """Génère des DataFrames pandas pour toutes les entités de la session."""
     s = sd()
     clients = s.clients
     comptes = s.comptes
@@ -578,7 +591,7 @@ def supprimer_patrimoine(id_client, item_id):
         client.patrimoines = [p for p in client.patrimoines if p.item_id != item_id]
     return redirect_etape()
 
-
+"""
 # Debug
 
 @app.route("/debug")
@@ -588,7 +601,7 @@ def debug():
     for k, v in dfs.items():
         html += f"<h2>{k}</h2>{v.to_html()}<hr>"
     return html
-
+"""
 
 # Projection
 @app.route("/projection/<int:id_compte>", methods=["GET"])

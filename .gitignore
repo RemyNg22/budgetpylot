@@ -8,3 +8,7 @@ __pycache__/
 # Environnement virtuel
 venv/
 
+# Checkpoints notebook
+.ipynb_checkpoints/
+
+notebook/.ipynb_checkpoints/

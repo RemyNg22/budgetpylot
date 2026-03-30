@@ -33,7 +33,11 @@ SEGMENTS_CAMEMBERT = {
 # Budget mensuel
 
 def stats_budget(clients: list, mois: int, annee: int) -> dict:
-
+    """
+    Calcule les statistiques budgétaires pour un ou plusieurs clients.
+    
+    Retourne : revenus détaillés, dépenses, crédits, épargne, solde et segments camembert.
+    """
     revenus_detail = []
     total_revenus_mois = 0.0
     total_revenus_annualises = 0.0
@@ -260,7 +264,7 @@ PONDERATION_REVENUS = {
     "Allocations familiales": 0.50,
     "Prime d'activité": 0.00,
     "Bourse étudiante":0.00,
-    "Loyer": 0.70,
+    "Revenu locatif": 0.70,
     "Revenu SCPI": 0.70,
     "Intérêt d'épargne": 0.50,
     "Coupon obligataire": 0.00,

@@ -36,6 +36,18 @@ class Depense:
         mois: int | None = None, 
         id_compte:int | None = None
     ):
+        """
+        Représente une dépense d'un client.
+
+        Attributes:
+            nom (str): nom de la dépense.
+            montant (float): montant de la dépense.
+            type_depense (str): type de dépense ("fixe", "variable_mensuelle", "unique").
+            categorie_depense (str): catégorie de la dépense (ex: Loyer, Alimentation, etc.).
+            jour (int | None): jour d'application de la dépense (1-31), obligatoire pour dépenses mensuelles et uniques.
+            mois (int | None): mois d'application pour les dépenses uniques (1-12).
+            id_compte (int | None): ID du compte associé à la dépense.
+        """
 
         if type_depense not in self.TYPE_DEPENSE:
             raise ValueError("Type de dépense invalide")

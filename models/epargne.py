@@ -1,6 +1,14 @@
 class VersementPonctuel:
  
     def __init__(self, montant: float, jour: int, mois: int):
+        """
+        Représente un versement ponctuel sur un compte d'épargne.
+
+        Attributs:
+            montant (float): montant du versement.
+            jour (int): jour du versement (1-28).
+            mois (int): mois du versement (1-12).
+        """
         if montant <= 0:
             raise ValueError("Le montant doit être positif")
         if not (1 <= jour <= 28):
@@ -51,6 +59,19 @@ class Epargne:
     }
 
     def __init__(self, type_epargne, solde, versements_permanents: float= 0, taux: float = 0):
+        """
+        Représente un produit d'épargne d'un client.
+
+        Attributs:
+            type_epargne (int): type d'épargne (clé dans TYPE_EPARGNE).
+            nom (str): nom du produit (ex: Livret A, PEA, Assurance Vie).
+            solde (float): solde actuel de l'épargne.
+            versements_permanents (float): versements automatiques mensuels.
+            taux (float): taux d'intérêt annuel (%) du produit.
+            plafond_min (float | None): minimum légal ou imposé pour le produit.
+            plafond_max (float | None): plafond légal ou imposé pour le produit.
+            versements_ponctuels (list[VersementPonctuel]): liste des versements ponctuels.
+        """
         if type_epargne not in self.TYPE_EPARGNE:
             raise ValueError("Type d'épargne invalide")
         
@@ -78,6 +99,17 @@ class Epargne:
             raise ValueError("Solde inférieur au minimum requis")
 
     def ajouter_versement_ponctuel(self, montant: float, jour: int, mois: int):
+        """
+        Ajoute un versement ponctuel à l'épargne.
+
+        Args:
+            montant (float): montant du versement.
+            jour (int): jour du versement (1-28).
+            mois (int): mois du versement (1-12).
+
+        Returns:
+            VersementPonctuel: instance créée et ajoutée à l'épargne.
+        """
         vp = VersementPonctuel(montant, jour, mois)
         self.versements_ponctuels.append(vp)
         return vp
