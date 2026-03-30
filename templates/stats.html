@@ -82,15 +82,17 @@
     <div class="kpi-card rouge">
       <div class="kpi-label">Total charges</div>
       <div class="kpi-value negatif">{{ b.total_charges }} EUR</div>
-      <div class="kpi-sub">Dépenses + crédits</div>
+      <div class="kpi-sub">Toutes les dépenses + crédits</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dépenses fixes</div>
       <div class="kpi-value">{{ b.total_fixes }} EUR</div>
+      <div class="kpi-sub">Dépenses fixes incompressible</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dépenses variables</div>
       <div class="kpi-value">{{ b.total_variables }} EUR</div>
+      <div class="kpi-sub">Dépenses qui peuvent évenntuellement changer d'un mois à l'autre</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dépenses uniques</div>
@@ -165,7 +167,7 @@
           <div class="kpi-value {% if b.reste_a_vivre >= 0 %}positif{% else %}negatif{% endif %}">
             {{ b.reste_a_vivre }} EUR
           </div>
-          <div class="kpi-sub">Revenus - fixes - crédits</div>
+          <div class="kpi-sub">Revenus - charges (sans compter les dépenses variables)</div>
         </div>
         <div class="kpi-card {% if b.capacite_epargne_mensuelle >= 0 %}vert{% else %}rouge{% endif %}">
           <div class="kpi-label">Capacité d'épargne</div>
@@ -262,7 +264,13 @@ new Chart(ctx, {
 {% set e = synthese.endettement %}
 {% if e %}
 <div class="section">
-  <h2>&#128196; Endettement</h2>
+  <h2>&#128196; Endettement
+    {% if e.mode == "foyer" %}
+      <span class="badge badge-or" style="font-size:13px; vertical-align:middle;">
+        Foyer — {{ e.noms | join(" & ") }}
+      </span>
+    {% endif %}
+  </h2>
   <div class="kpi-grid">
     <div class="kpi-card {% if e.alerte %}rouge{% else %}vert{% endif %}">
       <div class="kpi-label">Taux d'endettement</div>
@@ -270,9 +278,14 @@ new Chart(ctx, {
       <div class="kpi-sub">Seuil HCSF : 35% {% if e.alerte %}&#9888; Dépassé{% else %}&#10003; OK{% endif %}</div>
     </div>
     <div class="kpi-card bleu">
-      <div class="kpi-label">Revenus pondérés</div>
+      <div class="kpi-label">Revenus pondérés {% if e.mode == "foyer" %}(cumul foyer){% endif %}</div>
       <div class="kpi-value">{{ e.revenus_ponderes }} EUR</div>
       <div class="kpi-sub">Base bancaire</div>
+    </div>
+    <div class="kpi-card rouge">
+      <div class="kpi-label">Charges retenues</div>
+      <div class="kpi-value">{{ e.charges_retenues }} EUR</div>
+      <div class="kpi-sub">Loyer + impôts + crédits</div>
     </div>
     <div class="kpi-card rouge">
       <div class="kpi-label">CRD total</div>
@@ -287,9 +300,13 @@ new Chart(ctx, {
 
   <h3>Pondération des revenus (base bancaire)</h3>
   <table>
-    <tr><th>Type de revenu</th><th>Montant brut</th><th>Coefficient</th><th>Montant retenu</th></tr>
+    <tr>
+      {% if e.mode == "foyer" %}<th>Client</th>{% endif %}
+      <th>Type de revenu</th><th>Montant brut</th><th>Coefficient</th><th>Montant retenu</th>
+    </tr>
     {% for r in e.detail_revenus_ponderes %}
     <tr>
+      {% if e.mode == "foyer" %}<td>{{ r.client }}</td>{% endif %}
       <td>{{ r.type }}</td>
       <td>{{ r.montant_brut }} EUR</td>
       <td><span class="badge badge-bleu">{{ (r.coefficient * 100) | int }} %</span></td>
@@ -300,7 +317,7 @@ new Chart(ctx, {
 
   <h3>Détail des crédits</h3>
   <table>
-    <tr><th>Crédit</th><th>Part</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Mois restants</th><th>Coût restant</th></tr>
+    <tr><th>Crédit</th><th>Part retenue</th><th>Mensualité</th><th>CRD</th><th>Taux</th><th>Fin</th><th>Mois restants</th><th>Coût restant</th></tr>
     {% for cr in e.detail_credits %}
     <tr>
       <td><strong>{{ cr.nom }}</strong></td>
@@ -324,10 +341,15 @@ new Chart(ctx, {
 {% if cap %}
 <div class="section">
   <h2>&#127968; Capacité d'emprunt</h2>
+  {% if cap.mode == "foyer" %}
+  <p style="color:var(--gris-texte); margin-bottom:8px;">
+    <span class="badge badge-or">Foyer — {{ cap.noms | join(" & ") }}</span>
+  </p>
+  {% endif %}
   <p style="color:var(--gris-texte); margin-bottom:16px;">
-    Revenus pondérés : <strong>{{ cap.revenus_ponderes }} EUR/mois</strong> &nbsp;|&nbsp;
-    Charges actuelles (sans loyer) : <strong>{{ cap.charges_sans_loyer }} EUR</strong> &nbsp;|&nbsp;
-    Charges actuelles (avec loyer) : <strong>{{ cap.charges_avec_loyer }} EUR</strong>
+    Revenus pondérés{% if cap.mode == "foyer" %} (cumul foyer){% endif %} : <strong>{{ cap.revenus_ponderes }} EUR/mois</strong>
+    &nbsp;|&nbsp; Charges (sans loyer) : <strong>{{ cap.charges_sans_loyer }} EUR</strong>
+    &nbsp;|&nbsp; Charges (avec loyer) : <strong>{{ cap.charges_avec_loyer }} EUR</strong>
   </p>
   <table>
     <tr><th>Durée</th><th>Taux</th><th>Source</th><th>Capital (sans loyer)</th><th>Mensualité dispo</th><th>Capital (avec loyer)</th><th>Mensualité dispo</th></tr>

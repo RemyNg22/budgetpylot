@@ -15,7 +15,7 @@ class Patrimoine:
     )
 
     def __init__(self, type_patrimoine: str, nom: str, valeur: float, part: float = 100, 
-                 credits: list | None = None, revenus=None):
+                 credits: list | None = None, revenus=None, revenu=None):
         """
         Représente un bien patrimonial d'un client.
 
@@ -41,8 +41,10 @@ class Patrimoine:
         self.valeur = float(valeur)
         self.part = float(part)
         self.credits: list = credits if credits is not None else []
-        self.revenus: list = revenus if revenus is not None else []
- 
+        if revenu and not revenus:
+            revenus = [revenu]
+
+        self.revenus = revenus if revenus is not None else []
     @property
     def valeur_detention(self) -> float:
         """

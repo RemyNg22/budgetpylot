@@ -94,12 +94,12 @@ def exporter_csv(clients: dict, comptes: dict) -> str:
                     cr.item_id,
                     cr.id_compte if cr.id_compte is not None else "",
                     cr.type_de_credit,
-                    cr.capital_emprunte,
-                    cr.crd,
-                    cr.taux,
-                    cr.duree_initiale,
+                    cr.capital_emprunte if cr.capital_emprunte is not None else "",
+                    cr.crd if cr.crd is not None else "",
+                    cr.taux if cr.taux is not None else "",
+                    cr.duree_initiale if cr.duree_initiale is not None else "",
                     cr.mensualite,
-                    cr.fin_credit.strftime("%Y-%m-%d"),
+                    cr.fin_credit.strftime("%Y-%m-%d") if cr.fin_credit is not None else "",
                     cr.jour_echeance,
                     int(cr.deja_preleve)
                 ])
@@ -155,8 +155,9 @@ def exporter_csv(clients: dict, comptes: dict) -> str:
     # Patrimoines
     for client_id, client in clients.items():
         for p in client.patrimoines:
-            credit_id = p.credit.item_id if p.credit else ""
-            revenu_id = p.revenu.item_id if p.revenu else ""
+            # On exporte le premier crédit et le premier revenu (rétrocompat CSV)
+            credit_id = p.credits[0].item_id if p.credits else ""
+            revenu_id = p.revenus[0].item_id if p.revenus else ""
             writer.writerow([
                 "patrimoine",
                 p.item_id,
