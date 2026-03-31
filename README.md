@@ -4,7 +4,7 @@ BudgetPylot est un simulateur bancaire personnel développé en **Python** avec 
 
 **Le lien du site web BudgetPylot**
 
-[https://budgetpylot.com/saisie?etape=0](https://budgetpylot.com)
+[https://budgetpylot.com/](https://budgetpylot.com)
 
 
 Lien vers le notebook : [https://github.com/RemyNg22/budgetpylot/blob/main/notebook/notebook_budgetpylot.ipynb](https://github.com/RemyNg22/budgetpylot/blob/main/notebook/notebook_budgetpylot.ipynb)
