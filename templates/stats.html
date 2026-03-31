@@ -82,17 +82,15 @@
     <div class="kpi-card rouge">
       <div class="kpi-label">Total charges</div>
       <div class="kpi-value negatif">{{ b.total_charges }} EUR</div>
-      <div class="kpi-sub">Toutes les dépenses + crédits</div>
+      <div class="kpi-sub">Dépenses + crédits</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dépenses fixes</div>
       <div class="kpi-value">{{ b.total_fixes }} EUR</div>
-      <div class="kpi-sub">Dépenses fixes incompressible</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dépenses variables</div>
       <div class="kpi-value">{{ b.total_variables }} EUR</div>
-      <div class="kpi-sub">Dépenses qui peuvent évenntuellement changer d'un mois à l'autre</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Dépenses uniques</div>
@@ -167,7 +165,7 @@
           <div class="kpi-value {% if b.reste_a_vivre >= 0 %}positif{% else %}negatif{% endif %}">
             {{ b.reste_a_vivre }} EUR
           </div>
-          <div class="kpi-sub">Revenus - charges (sans compter les dépenses variables)</div>
+          <div class="kpi-sub">Revenus - fixes - crédits</div>
         </div>
         <div class="kpi-card {% if b.capacite_epargne_mensuelle >= 0 %}vert{% else %}rouge{% endif %}">
           <div class="kpi-label">Capacité d'épargne</div>
@@ -382,7 +380,13 @@ new Chart(ctx, {
 {% set ep = synthese.epargne %}
 {% if ep %}
 <div class="section">
-  <h2>&#128200; Épargne</h2>
+  <h2>&#128200; Épargne
+    {% if ep.mode is defined and ep.mode == "foyer" %}
+      <span class="badge badge-or" style="font-size:13px; vertical-align:middle;">
+        Foyer — {{ ep.noms | join(" & ") }}
+      </span>
+    {% endif %}
+  </h2>
   <div class="kpi-grid">
     <div class="kpi-card vert">
       <div class="kpi-label">Encours total</div>
@@ -411,11 +415,13 @@ new Chart(ctx, {
   <h3>Projections par produit</h3>
   <table>
     <tr>
+      {% if ep.mode is defined and ep.mode == "foyer" %}<th>Client</th>{% endif %}
       <th>Produit</th><th>Solde</th><th>Versement/mois</th><th>Taux</th>
       {% for label in ep.projections_consolidees.keys() %}<th>{{ label }}</th>{% endfor %}
     </tr>
     {% for p in ep.detail_produits %}
     <tr>
+      {% if ep.mode is defined and ep.mode == "foyer" %}<td>{{ p.client }}</td>{% endif %}
       <td><strong>{{ p.nom }}</strong></td>
       <td>{{ p.solde }} EUR</td>
       <td>{{ p.versement }} EUR</td>
@@ -426,6 +432,7 @@ new Chart(ctx, {
     </tr>
     {% endfor %}
     <tr style="background:var(--vert-pale); font-weight:600;">
+      {% if ep.mode is defined and ep.mode == "foyer" %}<td></td>{% endif %}
       <td>Total consolidé</td>
       <td>{{ ep.encours_total }} EUR</td>
       <td>{{ ep.versements_total }} EUR</td>
@@ -442,7 +449,13 @@ new Chart(ctx, {
 {% set pat = synthese.patrimoine %}
 {% if pat %}
 <div class="section">
-  <h2>&#127968; Patrimoine</h2>
+  <h2>&#127968; Patrimoine
+    {% if pat.mode is defined and pat.mode == "foyer" %}
+      <span class="badge badge-or" style="font-size:13px; vertical-align:middle;">
+        Foyer — {{ pat.noms | join(" & ") }}
+      </span>
+    {% endif %}
+  </h2>
   <div class="kpi-grid">
     <div class="kpi-card bleu">
       <div class="kpi-label">Patrimoine brut</div>
@@ -477,9 +490,13 @@ new Chart(ctx, {
 
   <h3>Détail des biens</h3>
   <table>
-    <tr><th>Nom</th><th>Type</th><th>Valeur</th><th>Part</th><th>Val. détenue</th><th>CRD</th><th>Val. nette</th><th>Rev. annuel</th><th>Rendement</th><th>Effort immo</th></tr>
+    <tr>
+      {% if pat.mode is defined and pat.mode == "foyer" %}<th>Client</th>{% endif %}
+      <th>Nom</th><th>Type</th><th>Valeur</th><th>Part</th><th>Val. détenue</th><th>CRD</th><th>Val. nette</th><th>Rev. annuel</th><th>Rendement</th><th>Effort immo</th>
+    </tr>
     {% for bien in pat.detail %}
     <tr>
+      {% if pat.mode is defined and pat.mode == "foyer" %}<td>{{ bien.client }}</td>{% endif %}
       <td><strong>{{ bien.nom }}</strong></td>
       <td><span class="badge badge-bleu">{{ bien.type }}</span></td>
       <td>{{ bien.valeur }} EUR</td>
@@ -493,48 +510,6 @@ new Chart(ctx, {
     </tr>
     {% else %}
     <tr><td colspan="10" style="color:var(--gris-texte); font-style:italic;">Aucun bien</td></tr>
-    {% endfor %}
-  </table>
-</div>
-{% endif %}
-
-<!-- Foyer -->
-{% if synthese.foyer %}
-{% set f = synthese.foyer %}
-<div class="section" style="border-left: 4px solid var(--or);">
-  <h2>&#128106; Vue foyer — {{ f.noms | join(" & ") }}</h2>
-  <div class="kpi-grid">
-    <div class="kpi-card vert">
-      <div class="kpi-label">Revenus foyer</div>
-      <div class="kpi-value positif">{{ f.total_revenus_foyer }} EUR</div>
-    </div>
-    <div class="kpi-card rouge">
-      <div class="kpi-label">Charges foyer</div>
-      <div class="kpi-value">{{ f.total_mensualites_foyer }} EUR</div>
-    </div>
-    <div class="kpi-card {% if f.alerte_endettement %}rouge{% else %}vert{% endif %}">
-      <div class="kpi-label">Taux endettement foyer</div>
-      <div class="kpi-value {% if f.alerte_endettement %}negatif{% else %}positif{% endif %}">{{ f.taux_endettement_foyer }} %</div>
-    </div>
-    <div class="kpi-card {% if f.solde_foyer >= 0 %}vert{% else %}rouge{% endif %}">
-      <div class="kpi-label">Solde foyer</div>
-      <div class="kpi-value {% if f.solde_foyer >= 0 %}positif{% else %}negatif{% endif %}">{{ f.solde_foyer }} EUR</div>
-    </div>
-  </div>
-
-  <h3>Revenus par client</h3>
-  <table>
-    <tr><th>Client</th><th>Revenus mensuels</th></tr>
-    {% for nom, rev in f.revenus_par_client.items() %}
-    <tr><td>{{ nom }}</td><td class="positif">{{ rev }} EUR</td></tr>
-    {% endfor %}
-  </table>
-
-  <h3>Contribution aux crédits</h3>
-  <table>
-    <tr><th>Emprunteur</th><th>Mensualité supportée</th></tr>
-    {% for nom, contrib in f.contributions_credits.items() %}
-    <tr><td>{{ nom }}</td><td class="negatif">{{ contrib }} EUR/mois</td></tr>
     {% endfor %}
   </table>
 </div>

@@ -694,7 +694,6 @@ def stats_foyer(clients: list) -> dict:
         return {}
 
     mois_courant = datetime.now().month
-
     total_revenus_foyer = 0.0
     revenus_par_client = {}
     for c in clients:
@@ -773,6 +772,162 @@ def stats_foyer(clients: list) -> dict:
     }
 
 
+# Épargne foyer
+
+def stats_epargne_foyer(clients: list, nb_mois_libre: int | None = None) -> dict:
+    """
+    Agrège l'épargne de plusieurs clients.
+    """
+    encours_total = 0.0
+    versements_total = 0.0
+    detail_produits = []
+    seen_ep = set()
+
+    horizons = [(12, "1 an")]
+    if nb_mois_libre and nb_mois_libre != 12:
+        horizons.append((nb_mois_libre, f"{nb_mois_libre} mois"))
+
+    projections_consolidees = {label: 0.0 for _, label in horizons}
+
+    familles = {
+        "Livrets réglementés": [1, 2, 3, 4, 5, 6],
+        "Livrets bancaires": [7, 8],
+        "Assurance Vie / Capi": [9, 10],
+        "Epargne retraite": [11, 12, 13],
+        "Placements financiers": [14, 15, 16],
+        "Autre": [17],
+    }
+    repartition = {}
+
+    for client in clients:
+        for e in client.epargnes:
+            if id(e) in seen_ep:
+                continue
+            seen_ep.add(id(e))
+            encours_total += e.solde
+            versements_total += e.versements_permanents
+
+            projections_produit = {}
+            for nb_mois, label in horizons:
+                valeur = _interets_composes(
+                    e.solde, e.versements_permanents, e.taux, nb_mois, e.versements_ponctuels
+                )
+                projections_produit[label] = valeur
+                projections_consolidees[label] += valeur
+
+            detail_produits.append({
+                "client": client.nom,
+                "nom": e.nom,
+                "solde": round(e.solde, 2),
+                "versement": round(e.versements_permanents, 2),
+                "taux": e.taux,
+                "plafond_max": e.plafond_max,
+                "projections": projections_produit,
+                "nb_versements_ponctuels": len(e.versements_ponctuels),
+            })
+
+            famille = next(
+                (f for f, codes in familles.items() if e.type_epargne in codes), "Autre"
+            )
+            repartition[famille] = repartition.get(famille, 0) + e.solde
+
+    projections_consolidees = {k: round(v, 2) for k, v in projections_consolidees.items()}
+
+    return {
+        "mode": "foyer",
+        "noms": [c.nom for c in clients],
+        "encours_total": round(encours_total, 2),
+        "versements_total": round(versements_total, 2),
+        "detail_produits": detail_produits,
+        "projections_consolidees": projections_consolidees,
+        "repartition_familles": {k: round(v, 2) for k, v in repartition.items() if v > 0},
+        "nb_produits": len(detail_produits),
+        "horizon_libre_mois": nb_mois_libre,
+    }
+
+
+# Patrimoine foyer
+
+def stats_patrimoine_foyer(clients: list) -> dict:
+    """
+    Agrège le patrimoine de plusieurs clients.
+    """
+    brut_total = 0.0
+    crd_total = 0.0
+    revenus_locatifs_annuels = 0.0
+    repartition = {}
+    detail = []
+    seen_pat = set()
+
+    for client in clients:
+        for p in client.patrimoines:
+            if id(p) in seen_pat:
+                continue
+            seen_pat.add(id(p))
+
+            valeur_detenue = p.valeur_detention
+            crd_bien = 0.0
+            mensualite_credit = 0.0
+
+            for cr in p.credits:
+                # Part = somme des parts des clients sélectionnés sur ce crédit
+                part_foyer = sum(
+                    cr.emprunteur.get(c, 0) for c in clients if c in cr.emprunteur
+                )
+                if cr.crd is not None:
+                    crd_bien += cr.crd * part_foyer
+                mensualite_credit += cr.mensualite * part_foyer
+
+            revenu_annuel = 0.0
+            if p.revenu:
+                if p.revenu.periodicite == "mensuelle":
+                    revenu_annuel = p.revenu.montant * 12
+                elif p.revenu.periodicite == "annuelle":
+                    revenu_annuel = p.revenu.montant
+            revenus_locatifs_annuels += revenu_annuel
+
+            rendement_brut = (
+                (revenu_annuel / valeur_detenue * 100)
+                if valeur_detenue > 0 and revenu_annuel > 0 else 0.0
+            )
+            effort_immobilier = round(mensualite_credit - revenu_annuel / 12, 2)
+
+            brut_total += valeur_detenue
+            crd_total += crd_bien
+            famille = _famille_patrimoine(p.type_patrimoine)
+            repartition[famille] = repartition.get(famille, 0) + valeur_detenue
+
+            # Propriétaires parmi les clients sélectionnés
+            proprietaires = [c.nom for c in clients if p in c.patrimoines]
+
+            detail.append({
+                "client": ", ".join(proprietaires),
+                "nom": p.nom,
+                "type": p.type_patrimoine,
+                "valeur": round(p.valeur, 2),
+                "part": p.part,
+                "valeur_detenue": round(valeur_detenue, 2),
+                "crd": round(crd_bien, 2),
+                "valeur_nette": round(valeur_detenue - crd_bien, 2),
+                "revenu_annuel": round(revenu_annuel, 2),
+                "rendement_brut": round(rendement_brut, 2),
+                "effort_immobilier": effort_immobilier,
+                "nb_credits": len(p.credits),
+            })
+
+    return {
+        "mode": "foyer",
+        "noms": [c.nom for c in clients],
+        "patrimoine_brut": round(brut_total, 2),
+        "crd_total": round(crd_total, 2),
+        "patrimoine_net": round(brut_total - crd_total, 2),
+        "revenus_locatifs_annuels": round(revenus_locatifs_annuels, 2),
+        "revenus_locatifs_mensuels": round(revenus_locatifs_annuels / 12, 2),
+        "repartition": {k: round(v, 2) for k, v in repartition.items()},
+        "detail": detail,
+        "nb_biens": len(detail),
+    }
+
 # Façade complète
 
 def synthese_complete(
@@ -804,6 +959,13 @@ def synthese_complete(
                 seen.add(cpt_id)
                 compte_ids.append(cpt_id)
 
+    if len(clients) > 1:
+        epargne = stats_epargne_foyer(clients, nb_mois_epargne_libre)
+        patrimoine = stats_patrimoine_foyer(clients)
+    else:
+        epargne = stats_epargne(client_principal, nb_mois_epargne_libre) if client_principal else {}
+        patrimoine = stats_patrimoine(client_principal) if client_principal else {}
+
     return {
         "noms_clients": [c.nom for c in clients],
         "date_calcul": now.strftime("%d/%m/%Y %H:%M"),
@@ -811,7 +973,7 @@ def synthese_complete(
         "comptes": stats_comptes(clients, comptes_dict, compte_ids),
         "endettement": endettement,
         "capacite_emprunt": capacite,
-        "epargne": stats_epargne(client_principal, nb_mois_epargne_libre) if client_principal else {},
-        "patrimoine": stats_patrimoine(client_principal) if client_principal else {},
+        "epargne": epargne,
+        "patrimoine": patrimoine,
         "foyer": stats_foyer(clients) if len(clients) > 1 else None,
     }

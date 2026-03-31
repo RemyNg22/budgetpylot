@@ -396,31 +396,44 @@ def importer_csv(
             epargne.ajouter_versement_ponctuel(montant, jour, mois)
 
     # Passe 8 : patrimoines
+    patrimoines_lignes: dict = {} 
     for row in rows:
         if not row or row[0] != "patrimoine":
             continue
         item_id = int(row[1])
-        client_id = int(row[2])
-        type_patrimoine = row[3]
-        nom = row[4]
-        valeur = float(row[5])
-        part = float(row[6])
-        credit_id = int(row[7]) if row[7] != "" else None
-        revenu_id = int(row[8]) if row[8] != "" else None
+        if item_id not in patrimoines_lignes:
+            patrimoines_lignes[item_id] = []
+        patrimoines_lignes[item_id].append(row)
 
+    for item_id, lignes in patrimoines_lignes.items():
+        row0      = lignes[0]
+        client_id = int(row0[2])
         if client_id not in clients:
             continue
 
-        credit_associe = credits_index.get(credit_id) if credit_id else None
+        valeur = float(row0[5])
+        part   = float(row0[6])
+
+        revenu_id     = int(row0[8]) if row0[8] != "" else None
         revenu_associe = revenus_index.get(revenu_id) if revenu_id else None
 
+        credits_associes = []
+        seen_cr = set()
+        for row in lignes:
+            credit_id = int(row[7]) if row[7] != "" else None
+            if credit_id and credit_id not in seen_cr:
+                cr = credits_index.get(credit_id)
+                if cr:
+                    credits_associes.append(cr)
+                    seen_cr.add(credit_id)
+
         p = Patrimoine(
-            type_patrimoine=type_patrimoine,
-            nom=nom,
+            type_patrimoine=row0[3],
+            nom=row0[4],
             valeur=valeur,
             part=part,
-            revenu=revenu_associe,
-            credit=credit_associe,
+            credits=credits_associes,
+            revenus=[revenu_associe] if revenu_associe else [],
         )
         p.item_id = item_id
         clients[client_id].ajouter_patrimoine(p)
@@ -428,5 +441,4 @@ def importer_csv(
             next_item_id = item_id + 1
 
     next_item_id_ref[0] = next_item_id
-
     return clients, comptes
