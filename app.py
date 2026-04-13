@@ -15,7 +15,7 @@ from data.csv_manager import exporter_csv, importer_csv
 from session_store import get_session_data
 
 app = Flask(__name__)
-app.secret_key = "budgetpylot_secret_change_en_prod"
+app.secret_key = "la_cle_secrete_pour_le_dev_exemple_pour_git"
 app.permanent_session_lifetime = timedelta(hours=4)
 app.jinja_env.globals.update(enumerate=enumerate)
 
